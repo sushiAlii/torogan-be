@@ -1,0 +1,8 @@
+# Environment variables
+.env
+
+# Go modules
+vendor/
+
+# IDE files
+.vscode/
