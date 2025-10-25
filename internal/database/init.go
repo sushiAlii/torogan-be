@@ -3,11 +3,12 @@ package database
 import (
 	"fmt"
 	"log"
-	"os"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
+
+	utils "github.com/sushiAlii/torogan-be/pkg"
 )
 
 var DB *gorm.DB
@@ -17,18 +18,16 @@ func ConnectDB() {
 	var err error
 
 	// Get database configuration from environment variables
-	dbHost := getEnv("DB_HOST", "postgres")
-	dbPort := getEnv("DB_PORT", "5432")
-	dbName := getEnv("DB_NAME", "torogan_db")
-	dbUser := getEnv("DB_USER", "torogan_user")
-	dbPassword := getEnv("DB_PASSWORD", "torogan_password")
-	dbSSLMode := getEnv("DB_SSLMODE", "disable")
+	dbHost := utils.GetEnv("DB_HOST", "postgres")
+	dbPort := utils.GetEnv("DB_PORT", "5432")
+	dbName := utils.GetEnv("DB_NAME", "torogan_db")
+	dbUser := utils.GetEnv("DB_USER", "torogan_user")
+	dbPassword := utils.GetEnv("DB_PASSWORD", "torogan_password")
+	dbSSLMode := utils.GetEnv("DB_SSLMODE", "disable")
 
-	// Construct DSN (Data Source Name)
 	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=%s",
 		dbHost, dbUser, dbPassword, dbName, dbPort, dbSSLMode)
 
-	// Connect to database
 	DB, err = gorm.Open(postgres.Open(dsn), &gorm.Config{
 		Logger: logger.Default.LogMode(logger.Info),
 	})
@@ -38,14 +37,6 @@ func ConnectDB() {
 	}
 
 	log.Println("Successfully connected to PostgreSQL database!")
-}
-
-
-func getEnv(key, defaultValue string) string {
-	if value := os.Getenv(key); value != "" {
-		return value
-	}
-	return defaultValue
 }
 
 // GetDB returns the database instance
