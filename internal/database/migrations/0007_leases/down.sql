@@ -1,3 +1,0 @@
-DROP TABLE IF EXISTS leases;
-
-DROP TYPE IF EXISTS lease_status;
