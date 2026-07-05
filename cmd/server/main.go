@@ -1,10 +1,19 @@
 package main
 
 import (
+	"fmt"
 	"log"
+	"net/http"
 
 	"github.com/joho/godotenv"
+	"golang.org/x/net/http2"
+	"golang.org/x/net/http2/h2c"
+
+	"github.com/sushiAlii/torogan-be/gen/propertyv1/propertyv1connect"
 	"github.com/sushiAlii/torogan-be/internal/database"
+	"github.com/sushiAlii/torogan-be/pkg/services"
+
+	utils "github.com/sushiAlii/torogan-be/pkg"
 )
 
 func main() {
@@ -13,26 +22,42 @@ func main() {
 		log.Println("No .env file found, using system environment variables")
 	}
 
-	// Connect to database
 	database.ConnectDB()
 
-	// Get database instance
 	db := database.GetDB()
 
-	// Test database connection
 	sqlDB, err := db.DB()
 	if err != nil {
 		log.Fatal("Failed to get database instance:", err)
 	}
 
-	// Ping database to test connection
 	if err := sqlDB.Ping(); err != nil {
 		log.Fatal("Failed to ping database:", err)
 	}
 
 	log.Println("Database connection test successful!")
 
-	// Your application logic goes here
-	// For now, we'll just keep the connection alive
+	// Property Service
+	ps := services.NewPropertyService(db)
+
+	mux := http.NewServeMux()
+
+	path, handler := propertyv1connect.NewPropertyServiceHandler(ps)
+	mux.Handle(path, handler)
+	log.Printf("🛣️  Mounted PropertyService endpoints under: %s", path)
+
+	port := utils.GetEnv("PORT", "8080")
+	serverAddr := fmt.Sprintf(":%s", port)
+	log.Printf("🚀 Torogan API engine online and listening on %s", serverAddr)
+
+	err = http.ListenAndServe(
+		serverAddr,
+		h2c.NewHandler(mux, &http2.Server{}),
+	)
+
+	if err != nil {
+		log.Fatalf("Failed to start server: %v", err)
+	}
+
 	select {}
 }
