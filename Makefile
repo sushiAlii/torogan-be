@@ -6,7 +6,7 @@ endif
 # Internal Docker network connection URL
 DB_URL=postgres://$(DB_USER):$(DB_PASSWORD)@torogan-postgres:5432/$(DB_NAME)?sslmode=$(DB_SSLMODE)
 
-.PHONY: up down migrate-up migrate-down migrate-create
+.PHONY: up down migrate-up migrate-down migrate-create proto-gen reset-db
 
 # --------------------------------------------------------------------
 # Core Infrastructure Controls
@@ -39,7 +39,7 @@ migrate-up:
 # Rollback the last applied migration step
 migrate-down:
 	@docker run --rm --network torogan-network -v $(shell pwd)/internal/database/migrations:/migrations migrate/migrate:v4.17.1 \
-		-path=/migrations -database '$(DB_URL)' down 1
+		-path=/migrations -database '$(DB_URL)' down -all
 
 # Generate a brand new sequential migration blueprint pair
 migrate-create:
@@ -51,3 +51,15 @@ proto-gen:
 	@mkdir -p gen
 	@buf generate
 	@echo "✅ Code generation successfully completed!"
+
+# 🔥 The Hard Reset: Wipes containers, volumes, and completely rebuilds the DB from scratch
+reset-db:
+	@echo "💥 Vaporizing local containers and persistent volumes..."
+	@docker compose down -v
+	@echo "🚀 Re-building infrastructure..."
+	@docker compose up -d --build
+	@echo "⏳ Waiting 3 seconds for database layers to settle..."
+	@sleep 3
+	@echo "🔄 Executing fresh migrations from ground zero..."
+	@$(MAKE) migrate-up
+	@echo "✨ Database has been fully reset and synchronized successfully!"
