@@ -4,6 +4,8 @@ CREATE TABLE
         email VARCHAR(100),
         password BYTEA NOT NULL,
         avatar_url TEXT,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
         role_id INTEGER REFERENCES roles(id) UNIQUE
     )
 
