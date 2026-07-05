@@ -45,3 +45,9 @@ migrate-down:
 migrate-create:
 	@docker run --rm -v $(shell pwd)/internal/database/migrations:/migrations migrate/migrate:v4.17.1 \
 		create -ext sql -dir /migrations -seq $(name)
+
+proto-gen:
+	@echo "🛠️ Compiling Protobuf and ConnectRPC architectures via Buf..."
+	@mkdir -p gen
+	@buf generate
+	@echo "✅ Code generation successfully completed!"
