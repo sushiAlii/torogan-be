@@ -15,7 +15,7 @@ DB_URL=postgres://$(DB_USER):$(DB_PASSWORD)@torogan-postgres:5432/$(DB_NAME)?ssl
 # Spin up infrastructure and instantly execute pending migrations
 up:
 	@echo "🚀 Spinning up Torogan infrastructure..."
-	@docker compose up -d --build
+	@docker compose up --build
 	@echo "⏳ Waiting 3 seconds for database layers to settle..."
 	@sleep 3
 	@echo "🔄 Running migrations..."
