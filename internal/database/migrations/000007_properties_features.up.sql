@@ -5,4 +5,4 @@ CREATE TABLE
         PRIMARY KEY(property_id, feature_id),
         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-        );
+    );

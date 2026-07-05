@@ -6,6 +6,7 @@ CREATE TABLE
         avatar_url TEXT,
         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        deleted_at TIMESTAMP WITH TIME ZONE,
         role_id INTEGER REFERENCES roles(id) UNIQUE
     )
 
