@@ -6,3 +6,8 @@ CREATE TABLE
         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
     );
+
+INSERT INTO roles (name) VALUES 
+    ('admin'),
+    ('user')
+ON CONFLICT (name) DO NOTHING;
