@@ -1,8 +1,14 @@
 # Environment variables
 .env
 
+/tmp/
+/bin/
+
 # Go modules
 vendor/
 
+/tmp
+
 # IDE files
 .vscode/
+.git/
