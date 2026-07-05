@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 
+	"connectrpc.com/vanguard"
 	"github.com/joho/godotenv"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
@@ -40,15 +41,22 @@ func main() {
 	// Property Service
 	ps := services.NewPropertyService(db)
 
-	mux := http.NewServeMux()
-
 	path, handler := propertyv1connect.NewPropertyServiceHandler(ps)
-	mux.Handle(path, handler)
-	log.Printf("🛣️  Mounted PropertyService endpoints under: %s", path)
+
+	// Vanguard Service
+	vs := vanguard.NewService(path, handler)
+
+	gateway, err := vanguard.NewTranscoder([]*vanguard.Service{vs})
+	if err != nil {
+		log.Fatalf("Failed to create vanguard gateway: %v", err)
+	}
+
+	mux := http.NewServeMux()
+	mux.Handle("/", gateway)
 
 	port := utils.GetEnv("PORT", "8080")
 	serverAddr := fmt.Sprintf(":%s", port)
-	log.Printf("🚀 Torogan API engine online and listening on %s", serverAddr)
+	log.Printf("🚀 Torogan API engine online and listening on port %s", port)
 
 	err = http.ListenAndServe(
 		serverAddr,
