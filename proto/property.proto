@@ -1,0 +1,69 @@
+syntax = "proto3";
+
+package property.v1;
+
+option go_package = "github.com/sushiAlii/torogan-be/gen/propertyv1;propertyv1";
+
+import "google/protobuf/timestamp.proto";
+
+// 1. Core Data Structure (The base object shared across APIs)
+message Property {
+  string id = 1;
+  string title = 2;
+  double size_sq_m = 3;
+  string description = 4;
+  string price = 5; // String ensures high precision for currency across languages
+  string owner_id = 6;
+  google.protobuf.Timestamp created_at = 7;
+  google.protobuf.Timestamp updated_at = 8;
+}
+
+message CreatePropertyRequest {
+  string title = 1;
+  double size_sq_m = 2;
+  string description = 3;
+  string price = 4;
+  string owner_id = 5;
+}
+
+message GetPropertyByIDRequest {
+  string id = 1;
+}
+
+message GetPropertyListRequest {
+  string cursor = 1;
+  int32 limit = 2;
+  string search = 3;
+}
+
+message GetPropertyListResponse {
+  repeated Property properties = 1;
+  string next_cursor = 2;
+  int32 total_count = 3;
+}
+
+message UpdatePropertyByIDRequest {
+  string id = 1;
+  string title = 2;
+  double size_sq_m = 3;
+  string description = 4;
+  string price = 5;
+}
+
+// 6. DELETE ENDPOINT MESSAGES
+message DeletePropertyByIDRequest {
+  string id = 1;
+}
+
+message DeletePropertyByIDResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+service PropertyService {
+  rpc CreateProperty(CreatePropertyRequest) returns (Property);
+  rpc GetPropertyByID(GetPropertyByIDRequest) returns (Property);
+  rpc GetPropertyList(GetPropertyListRequest) returns (GetPropertyListResponse);
+  rpc UpdatePropertyByID(UpdatePropertyByIDRequest) returns (Property);
+  rpc DeletePropertyByID(DeletePropertyByIDRequest) returns (DeletePropertyByIDResponse);
+}
