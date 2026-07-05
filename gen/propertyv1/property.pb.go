@@ -7,6 +7,7 @@
 package propertyv1
 
 import (
+	_ "google.golang.org/genproto/googleapis/api/annotations"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
@@ -540,7 +541,7 @@ var File_property_proto protoreflect.FileDescriptor
 
 const file_property_proto_rawDesc = "" +
 	"\n" +
-	"\x0eproperty.proto\x12\vproperty.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"\x95\x02\n" +
+	"\x0eproperty.proto\x12\vproperty.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1cgoogle/api/annotations.proto\"\x95\x02\n" +
 	"\bProperty\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12\x1a\n" +
@@ -582,13 +583,13 @@ const file_property_proto_rawDesc = "" +
 	"\x02id\x18\x01 \x01(\tR\x02id\"P\n" +
 	"\x1aDeletePropertyByIDResponse\x12\x18\n" +
 	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x18\n" +
-	"\amessage\x18\x02 \x01(\tR\amessage2\xc7\x03\n" +
-	"\x0fPropertyService\x12K\n" +
-	"\x0eCreateProperty\x12\".property.v1.CreatePropertyRequest\x1a\x15.property.v1.Property\x12M\n" +
-	"\x0fGetPropertyByID\x12#.property.v1.GetPropertyByIDRequest\x1a\x15.property.v1.Property\x12\\\n" +
-	"\x0fGetPropertyList\x12#.property.v1.GetPropertyListRequest\x1a$.property.v1.GetPropertyListResponse\x12S\n" +
-	"\x12UpdatePropertyByID\x12&.property.v1.UpdatePropertyByIDRequest\x1a\x15.property.v1.Property\x12e\n" +
-	"\x12DeletePropertyByID\x12&.property.v1.DeletePropertyByIDRequest\x1a'.property.v1.DeletePropertyByIDResponseB;Z9github.com/sushiAlii/torogan-be/gen/propertyv1;propertyv1b\x06proto3"
+	"\amessage\x18\x02 \x01(\tR\amessage2\xd5\x04\n" +
+	"\x0fPropertyService\x12f\n" +
+	"\x0eCreateProperty\x12\".property.v1.CreatePropertyRequest\x1a\x15.property.v1.Property\"\x19\x82\xd3\xe4\x93\x02\x13:\x01*\"\x0e/v1/properties\x12j\n" +
+	"\x0fGetPropertyByID\x12#.property.v1.GetPropertyByIDRequest\x1a\x15.property.v1.Property\"\x1b\x82\xd3\xe4\x93\x02\x15\x12\x13/v1/properties/{id}\x12t\n" +
+	"\x0fGetPropertyList\x12#.property.v1.GetPropertyListRequest\x1a$.property.v1.GetPropertyListResponse\"\x16\x82\xd3\xe4\x93\x02\x10\x12\x0e/v1/properties\x12s\n" +
+	"\x12UpdatePropertyByID\x12&.property.v1.UpdatePropertyByIDRequest\x1a\x15.property.v1.Property\"\x1e\x82\xd3\xe4\x93\x02\x18:\x01*\x1a\x13/v1/properties/{id}\x12\x82\x01\n" +
+	"\x12DeletePropertyByID\x12&.property.v1.DeletePropertyByIDRequest\x1a'.property.v1.DeletePropertyByIDResponse\"\x1b\x82\xd3\xe4\x93\x02\x15*\x13/v1/properties/{id}B;Z9github.com/sushiAlii/torogan-be/gen/propertyv1;propertyv1b\x06proto3"
 
 var (
 	file_property_proto_rawDescOnce sync.Once

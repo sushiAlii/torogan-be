@@ -5,6 +5,7 @@ package property.v1;
 option go_package = "github.com/sushiAlii/torogan-be/gen/propertyv1;propertyv1";
 
 import "google/protobuf/timestamp.proto";
+import "google/api/annotations.proto";
 
 // 1. Core Data Structure (The base object shared across APIs)
 message Property {
@@ -61,9 +62,31 @@ message DeletePropertyByIDResponse {
 }
 
 service PropertyService {
-  rpc CreateProperty(CreatePropertyRequest) returns (Property);
-  rpc GetPropertyByID(GetPropertyByIDRequest) returns (Property);
-  rpc GetPropertyList(GetPropertyListRequest) returns (GetPropertyListResponse);
-  rpc UpdatePropertyByID(UpdatePropertyByIDRequest) returns (Property);
-  rpc DeletePropertyByID(DeletePropertyByIDRequest) returns (DeletePropertyByIDResponse);
+  rpc CreateProperty(CreatePropertyRequest) returns (Property) {
+    option (google.api.http) = {
+      post: "/v1/properties"
+      body: "*"
+    };
+  }
+  rpc GetPropertyByID(GetPropertyByIDRequest) returns (Property){
+    option (google.api.http) = {
+      get: "/v1/properties/{id}"
+    };
+  }
+  rpc GetPropertyList(GetPropertyListRequest) returns (GetPropertyListResponse) {
+    option (google.api.http) = {
+      get: "/v1/properties"
+    };
+  }
+  rpc UpdatePropertyByID(UpdatePropertyByIDRequest) returns (Property) {
+    option (google.api.http) = {
+      put: "/v1/properties/{id}"
+      body: "*"
+    };
+  }
+  rpc DeletePropertyByID(DeletePropertyByIDRequest) returns (DeletePropertyByIDResponse) {
+    option (google.api.http) = {
+      delete: "/v1/properties/{id}"
+    };
+  }
 }
