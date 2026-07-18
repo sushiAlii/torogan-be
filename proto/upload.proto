@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+package upload.v1;
+
+option go_package = "github.com/sushiAlii/torogan-be/gen/uploadv1;uploadv1";
+
+import "google/api/annotations.proto";
+
+message CreatePresignedUploadRequest {
+  string content_type = 1; // e.g. "image/jpeg"
+  string file_ext = 2;     // e.g. "jpg"
+}
+
+message CreatePresignedUploadResponse {
+  string upload_url = 1; // presigned S3 PUT URL, short-lived
+  string public_url = 2; // the resulting object's public URL, to persist
+  string key = 3;        // the S3 object key
+}
+
+service UploadService {
+  // CreatePresignedUpload mints a short-lived presigned S3 PUT URL so the
+  // browser can upload a file directly to the bucket without routing bytes
+  // through this server.
+  rpc CreatePresignedUpload(CreatePresignedUploadRequest) returns (CreatePresignedUploadResponse) {
+    option (google.api.http) = {
+      post: "/v1/uploads/presign"
+      body: "*"
+    };
+  }
+}
