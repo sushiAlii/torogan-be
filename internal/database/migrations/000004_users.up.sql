@@ -4,6 +4,8 @@ CREATE TABLE
         email VARCHAR(100) NOT NULL UNIQUE,
         password BYTEA,
         avatar_url TEXT,
+        name VARCHAR(100),
+        phone VARCHAR(30),
         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
         deleted_at TIMESTAMP WITH TIME ZONE,
