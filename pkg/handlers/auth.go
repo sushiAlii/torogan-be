@@ -30,12 +30,7 @@ func (h *AuthHandler) Register(ctx context.Context, req *connect.Request[authv1.
 
 	res := connect.NewResponse(&authv1.RegisterResponse{
 		AccessToken: tokens.AccessToken,
-		User: &authv1.User{
-			Id:        user.ID.String(),
-			Email:     user.Email,
-			AvatarUrl: user.AvatarURL,
-			Role:      role,
-		},
+		User:        mapUserToProto(user, role),
 	})
 
 	setRefreshCookie(res.Header(), tokens.RefreshToken)
@@ -52,12 +47,7 @@ func (h *AuthHandler) Login(ctx context.Context, req *connect.Request[authv1.Log
 
 	res := connect.NewResponse(&authv1.LoginResponse{
 		AccessToken: tokens.AccessToken,
-		User: &authv1.User{
-			Id:        user.ID.String(),
-			Email:     user.Email,
-			AvatarUrl: user.AvatarURL,
-			Role:      role,
-		},
+		User:        mapUserToProto(user, role),
 	})
 
 	setRefreshCookie(res.Header(), tokens.RefreshToken)
@@ -74,12 +64,7 @@ func (h *AuthHandler) SignInWithGoogle(ctx context.Context, req *connect.Request
 
 	res := connect.NewResponse(&authv1.SignInWithGoogleResponse{
 		AccessToken: tokens.AccessToken,
-		User: &authv1.User{
-			Id:        user.ID.String(),
-			Email:     user.Email,
-			AvatarUrl: user.AvatarURL,
-			Role:      role,
-		},
+		User:        mapUserToProto(user, role),
 	})
 
 	setRefreshCookie(res.Header(), tokens.RefreshToken)
@@ -111,12 +96,7 @@ func (h *AuthHandler) RefreshToken(ctx context.Context, req *connect.Request[aut
 
 	return connect.NewResponse(&authv1.RefreshTokenResponse{
 		AccessToken: accessToken,
-		User: &authv1.User{
-			Id:        user.ID.String(),
-			Email:     user.Email,
-			AvatarUrl: user.AvatarURL,
-			Role:      resolvedRole,
-		},
+		User:        mapUserToProto(user, resolvedRole),
 	}), nil
 }
 
