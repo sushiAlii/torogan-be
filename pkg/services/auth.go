@@ -308,3 +308,41 @@ func (as *AuthService) ValidateRefreshToken(tokenStr string) (userID, role strin
 
 	return sub, roleClaim, nil
 }
+
+// ValidateAccessToken validates an access JWT (as sent in the Authorization
+// header) and returns the subject (user ID) and role carried in its claims.
+// It rejects refresh tokens (typ="refresh") since those must only ever be
+// presented via the HttpOnly refresh cookie.
+func (as *AuthService) ValidateAccessToken(tokenStr string) (userID, role string, err error) {
+	secret := utils.GetEnv("JWT_SECRET", "default_secret")
+	if secret == "" {
+		return "", "", errors.New("JWT_SECRET environment variable is not set")
+	}
+
+	token, err := jwt.Parse(tokenStr, func(t *jwt.Token) (any, error) {
+		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", t.Header["alg"])
+		}
+		return []byte(secret), nil
+	})
+	if err != nil || !token.Valid {
+		return "", "", fmt.Errorf("invalid access token: %w", err)
+	}
+
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok {
+		return "", "", errors.New("invalid access token claims")
+	}
+
+	if typ, _ := claims["typ"].(string); typ == "refresh" {
+		return "", "", errors.New("refresh token is not valid as an access token")
+	}
+
+	sub, _ := claims["sub"].(string)
+	if sub == "" {
+		return "", "", errors.New("access token missing subject")
+	}
+	roleClaim, _ := claims["role"].(string)
+
+	return sub, roleClaim, nil
+}
