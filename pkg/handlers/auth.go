@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"time"
 
@@ -20,19 +21,20 @@ func NewAuthHandler(as *services.AuthService) *AuthHandler {
 	}
 }
 
-func (h *AuthHandler) Register(ctx context.Context, req *connect.Request[authv1.RegisterRequest],) (*connect.Response[authv1.RegisterResponse], error) {
+func (h *AuthHandler) Register(ctx context.Context, req *connect.Request[authv1.RegisterRequest]) (*connect.Response[authv1.RegisterResponse], error) {
 
-	user, tokens, err := h.authService.Register(req.Msg.Email, req.Msg.Password)
+	user, role, tokens, err := h.authService.Register(req.Msg.Email, req.Msg.Password)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
-	
+
 	res := connect.NewResponse(&authv1.RegisterResponse{
 		AccessToken: tokens.AccessToken,
 		User: &authv1.User{
-			Id:    user.ID.String(),
-			Email: user.Email,
+			Id:        user.ID.String(),
+			Email:     user.Email,
 			AvatarUrl: user.AvatarURL,
+			Role:      role,
 		},
 	})
 
@@ -43,34 +45,79 @@ func (h *AuthHandler) Register(ctx context.Context, req *connect.Request[authv1.
 
 func (h *AuthHandler) Login(ctx context.Context, req *connect.Request[authv1.LoginRequest]) (*connect.Response[authv1.LoginResponse], error) {
 
-	user, token, err := h.authService.Login(req.Msg.Email, req.Msg.Password)
+	user, role, tokens, err := h.authService.Login(req.Msg.Email, req.Msg.Password)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeUnauthenticated, err)
 	}
 
 	res := connect.NewResponse(&authv1.LoginResponse{
-		AccessToken: token.AccessToken,
+		AccessToken: tokens.AccessToken,
 		User: &authv1.User{
-			Id:			user.ID.String(),
-			Email:		user.Email,
-			AvatarUrl: 	user.AvatarURL,
+			Id:        user.ID.String(),
+			Email:     user.Email,
+			AvatarUrl: user.AvatarURL,
+			Role:      role,
 		},
 	})
 
-	setRefreshCookie(res.Header(), token.RefreshToken)
+	setRefreshCookie(res.Header(), tokens.RefreshToken)
 
 	return res, nil
 }
 
+func (h *AuthHandler) SignInWithGoogle(ctx context.Context, req *connect.Request[authv1.SignInWithGoogleRequest]) (*connect.Response[authv1.SignInWithGoogleResponse], error) {
+
+	user, role, tokens, err := h.authService.SignInWithGoogle(ctx, req.Msg.GetIdToken())
+	if err != nil {
+		return nil, connect.NewError(connect.CodeUnauthenticated, err)
+	}
+
+	res := connect.NewResponse(&authv1.SignInWithGoogleResponse{
+		AccessToken: tokens.AccessToken,
+		User: &authv1.User{
+			Id:        user.ID.String(),
+			Email:     user.Email,
+			AvatarUrl: user.AvatarURL,
+			Role:      role,
+		},
+	})
+
+	setRefreshCookie(res.Header(), tokens.RefreshToken)
+
+	return res, nil
+}
+
+func (h *AuthHandler) RefreshToken(ctx context.Context, req *connect.Request[authv1.RefreshTokenRequest]) (*connect.Response[authv1.RefreshTokenResponse], error) {
+
+	cookie, err := (&http.Request{Header: req.Header()}).Cookie("refresh_token")
+	if err != nil {
+		return nil, connect.NewError(connect.CodeUnauthenticated, errors.New("missing refresh token"))
+	}
+
+	userID, role, err := h.authService.ValidateRefreshToken(cookie.Value)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeUnauthenticated, err)
+	}
+
+	accessToken, err := h.authService.GenerateAccessToken(userID, role)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, err)
+	}
+
+	return connect.NewResponse(&authv1.RefreshTokenResponse{
+		AccessToken: accessToken,
+	}), nil
+}
+
 func setRefreshCookie(header http.Header, token string) {
 	cookie := &http.Cookie{
-		Name:		"refresh_token",
-		Value:		token,
-		Path:		"/",
-		MaxAge: 	int((7 * 24 * time.Hour).Seconds()),
-		HttpOnly: 	true,
-		Secure:		true,
-		SameSite: 	http.SameSiteStrictMode,
+		Name:     "refresh_token",
+		Value:    token,
+		Path:     "/",
+		MaxAge:   int((7 * 24 * time.Hour).Seconds()),
+		HttpOnly: true,
+		Secure:   true,
+		SameSite: http.SameSiteStrictMode,
 	}
 
 	header.Add("Set-Cookie", cookie.String())

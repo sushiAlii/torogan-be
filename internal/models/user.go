@@ -10,9 +10,9 @@ import (
 type User struct {
 	ID          uuid.UUID		`gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
 	Email	 	string			`gorm:"type:varchar(100);unique;not null"`
-	Password 	[]byte			`gorm:"type:bytea;not null"`
+	Password 	[]byte			`gorm:"type:bytea"`
 	AvatarURL 	string			`gorm:"type:text"`
-	RoleID	  	uint			`gorm:"not null"`
+	RoleID	  	uint			`gorm:"column:role_id"`
 	CreatedAt   time.Time	
 	UpdatedAt   time.Time
 	DeletedAt   gorm.DeletedAt	`gorm:"index"`
