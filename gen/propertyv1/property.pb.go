@@ -7,6 +7,7 @@
 package propertyv1
 
 import (
+	featurev1 "github.com/sushiAlii/torogan-be/gen/featurev1"
 	_ "google.golang.org/genproto/googleapis/api/annotations"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
@@ -537,11 +538,204 @@ func (x *DeletePropertyByIDResponse) GetMessage() string {
 	return ""
 }
 
+// 7. PROPERTY <-> FEATURE SUB-RESOURCE MESSAGES
+type AddPropertyFeatureRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	PropertyId    string                 `protobuf:"bytes,1,opt,name=property_id,json=propertyId,proto3" json:"property_id,omitempty"`
+	FeatureId     int32                  `protobuf:"varint,2,opt,name=feature_id,json=featureId,proto3" json:"feature_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AddPropertyFeatureRequest) Reset() {
+	*x = AddPropertyFeatureRequest{}
+	mi := &file_property_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AddPropertyFeatureRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AddPropertyFeatureRequest) ProtoMessage() {}
+
+func (x *AddPropertyFeatureRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_property_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AddPropertyFeatureRequest.ProtoReflect.Descriptor instead.
+func (*AddPropertyFeatureRequest) Descriptor() ([]byte, []int) {
+	return file_property_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *AddPropertyFeatureRequest) GetPropertyId() string {
+	if x != nil {
+		return x.PropertyId
+	}
+	return ""
+}
+
+func (x *AddPropertyFeatureRequest) GetFeatureId() int32 {
+	if x != nil {
+		return x.FeatureId
+	}
+	return 0
+}
+
+type RemovePropertyFeatureRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	PropertyId    string                 `protobuf:"bytes,1,opt,name=property_id,json=propertyId,proto3" json:"property_id,omitempty"`
+	FeatureId     int32                  `protobuf:"varint,2,opt,name=feature_id,json=featureId,proto3" json:"feature_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RemovePropertyFeatureRequest) Reset() {
+	*x = RemovePropertyFeatureRequest{}
+	mi := &file_property_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RemovePropertyFeatureRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RemovePropertyFeatureRequest) ProtoMessage() {}
+
+func (x *RemovePropertyFeatureRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_property_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RemovePropertyFeatureRequest.ProtoReflect.Descriptor instead.
+func (*RemovePropertyFeatureRequest) Descriptor() ([]byte, []int) {
+	return file_property_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *RemovePropertyFeatureRequest) GetPropertyId() string {
+	if x != nil {
+		return x.PropertyId
+	}
+	return ""
+}
+
+func (x *RemovePropertyFeatureRequest) GetFeatureId() int32 {
+	if x != nil {
+		return x.FeatureId
+	}
+	return 0
+}
+
+type ListPropertyFeaturesRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	PropertyId    string                 `protobuf:"bytes,1,opt,name=property_id,json=propertyId,proto3" json:"property_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListPropertyFeaturesRequest) Reset() {
+	*x = ListPropertyFeaturesRequest{}
+	mi := &file_property_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListPropertyFeaturesRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListPropertyFeaturesRequest) ProtoMessage() {}
+
+func (x *ListPropertyFeaturesRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_property_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListPropertyFeaturesRequest.ProtoReflect.Descriptor instead.
+func (*ListPropertyFeaturesRequest) Descriptor() ([]byte, []int) {
+	return file_property_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *ListPropertyFeaturesRequest) GetPropertyId() string {
+	if x != nil {
+		return x.PropertyId
+	}
+	return ""
+}
+
+type ListPropertyFeaturesResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Features      []*featurev1.Feature   `protobuf:"bytes,1,rep,name=features,proto3" json:"features,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListPropertyFeaturesResponse) Reset() {
+	*x = ListPropertyFeaturesResponse{}
+	mi := &file_property_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListPropertyFeaturesResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListPropertyFeaturesResponse) ProtoMessage() {}
+
+func (x *ListPropertyFeaturesResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_property_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListPropertyFeaturesResponse.ProtoReflect.Descriptor instead.
+func (*ListPropertyFeaturesResponse) Descriptor() ([]byte, []int) {
+	return file_property_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *ListPropertyFeaturesResponse) GetFeatures() []*featurev1.Feature {
+	if x != nil {
+		return x.Features
+	}
+	return nil
+}
+
 var File_property_proto protoreflect.FileDescriptor
 
 const file_property_proto_rawDesc = "" +
 	"\n" +
-	"\x0eproperty.proto\x12\vproperty.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1cgoogle/api/annotations.proto\"\x95\x02\n" +
+	"\x0eproperty.proto\x12\vproperty.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1cgoogle/api/annotations.proto\x1a\rfeature.proto\"\x95\x02\n" +
 	"\bProperty\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12\x1a\n" +
@@ -583,13 +777,31 @@ const file_property_proto_rawDesc = "" +
 	"\x02id\x18\x01 \x01(\tR\x02id\"P\n" +
 	"\x1aDeletePropertyByIDResponse\x12\x18\n" +
 	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x18\n" +
-	"\amessage\x18\x02 \x01(\tR\amessage2\xd5\x04\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage\"[\n" +
+	"\x19AddPropertyFeatureRequest\x12\x1f\n" +
+	"\vproperty_id\x18\x01 \x01(\tR\n" +
+	"propertyId\x12\x1d\n" +
+	"\n" +
+	"feature_id\x18\x02 \x01(\x05R\tfeatureId\"^\n" +
+	"\x1cRemovePropertyFeatureRequest\x12\x1f\n" +
+	"\vproperty_id\x18\x01 \x01(\tR\n" +
+	"propertyId\x12\x1d\n" +
+	"\n" +
+	"feature_id\x18\x02 \x01(\x05R\tfeatureId\">\n" +
+	"\x1bListPropertyFeaturesRequest\x12\x1f\n" +
+	"\vproperty_id\x18\x01 \x01(\tR\n" +
+	"propertyId\"O\n" +
+	"\x1cListPropertyFeaturesResponse\x12/\n" +
+	"\bfeatures\x18\x01 \x03(\v2\x13.feature.v1.FeatureR\bfeatures2\xb8\b\n" +
 	"\x0fPropertyService\x12f\n" +
 	"\x0eCreateProperty\x12\".property.v1.CreatePropertyRequest\x1a\x15.property.v1.Property\"\x19\x82\xd3\xe4\x93\x02\x13:\x01*\"\x0e/v1/properties\x12j\n" +
 	"\x0fGetPropertyByID\x12#.property.v1.GetPropertyByIDRequest\x1a\x15.property.v1.Property\"\x1b\x82\xd3\xe4\x93\x02\x15\x12\x13/v1/properties/{id}\x12t\n" +
 	"\x0fGetPropertyList\x12#.property.v1.GetPropertyListRequest\x1a$.property.v1.GetPropertyListResponse\"\x16\x82\xd3\xe4\x93\x02\x10\x12\x0e/v1/properties\x12s\n" +
 	"\x12UpdatePropertyByID\x12&.property.v1.UpdatePropertyByIDRequest\x1a\x15.property.v1.Property\"\x1e\x82\xd3\xe4\x93\x02\x18:\x01*\x1a\x13/v1/properties/{id}\x12\x82\x01\n" +
-	"\x12DeletePropertyByID\x12&.property.v1.DeletePropertyByIDRequest\x1a'.property.v1.DeletePropertyByIDResponse\"\x1b\x82\xd3\xe4\x93\x02\x15*\x13/v1/properties/{id}B;Z9github.com/sushiAlii/torogan-be/gen/propertyv1;propertyv1b\x06proto3"
+	"\x12DeletePropertyByID\x12&.property.v1.DeletePropertyByIDRequest\x1a'.property.v1.DeletePropertyByIDResponse\"\x1b\x82\xd3\xe4\x93\x02\x15*\x13/v1/properties/{id}\x12\x99\x01\n" +
+	"\x12AddPropertyFeature\x12&.property.v1.AddPropertyFeatureRequest\x1a).property.v1.ListPropertyFeaturesResponse\"0\x82\xd3\xe4\x93\x02*:\x01*\"%/v1/properties/{property_id}/features\x12\xa7\x01\n" +
+	"\x15RemovePropertyFeature\x12).property.v1.RemovePropertyFeatureRequest\x1a'.property.v1.DeletePropertyByIDResponse\":\x82\xd3\xe4\x93\x024*2/v1/properties/{property_id}/features/{feature_id}\x12\x9a\x01\n" +
+	"\x14ListPropertyFeatures\x12(.property.v1.ListPropertyFeaturesRequest\x1a).property.v1.ListPropertyFeaturesResponse\"-\x82\xd3\xe4\x93\x02'\x12%/v1/properties/{property_id}/featuresB;Z9github.com/sushiAlii/torogan-be/gen/propertyv1;propertyv1b\x06proto3"
 
 var (
 	file_property_proto_rawDescOnce sync.Once
@@ -603,37 +815,49 @@ func file_property_proto_rawDescGZIP() []byte {
 	return file_property_proto_rawDescData
 }
 
-var file_property_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
+var file_property_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
 var file_property_proto_goTypes = []any{
-	(*Property)(nil),                   // 0: property.v1.Property
-	(*CreatePropertyRequest)(nil),      // 1: property.v1.CreatePropertyRequest
-	(*GetPropertyByIDRequest)(nil),     // 2: property.v1.GetPropertyByIDRequest
-	(*GetPropertyListRequest)(nil),     // 3: property.v1.GetPropertyListRequest
-	(*GetPropertyListResponse)(nil),    // 4: property.v1.GetPropertyListResponse
-	(*UpdatePropertyByIDRequest)(nil),  // 5: property.v1.UpdatePropertyByIDRequest
-	(*DeletePropertyByIDRequest)(nil),  // 6: property.v1.DeletePropertyByIDRequest
-	(*DeletePropertyByIDResponse)(nil), // 7: property.v1.DeletePropertyByIDResponse
-	(*timestamppb.Timestamp)(nil),      // 8: google.protobuf.Timestamp
+	(*Property)(nil),                     // 0: property.v1.Property
+	(*CreatePropertyRequest)(nil),        // 1: property.v1.CreatePropertyRequest
+	(*GetPropertyByIDRequest)(nil),       // 2: property.v1.GetPropertyByIDRequest
+	(*GetPropertyListRequest)(nil),       // 3: property.v1.GetPropertyListRequest
+	(*GetPropertyListResponse)(nil),      // 4: property.v1.GetPropertyListResponse
+	(*UpdatePropertyByIDRequest)(nil),    // 5: property.v1.UpdatePropertyByIDRequest
+	(*DeletePropertyByIDRequest)(nil),    // 6: property.v1.DeletePropertyByIDRequest
+	(*DeletePropertyByIDResponse)(nil),   // 7: property.v1.DeletePropertyByIDResponse
+	(*AddPropertyFeatureRequest)(nil),    // 8: property.v1.AddPropertyFeatureRequest
+	(*RemovePropertyFeatureRequest)(nil), // 9: property.v1.RemovePropertyFeatureRequest
+	(*ListPropertyFeaturesRequest)(nil),  // 10: property.v1.ListPropertyFeaturesRequest
+	(*ListPropertyFeaturesResponse)(nil), // 11: property.v1.ListPropertyFeaturesResponse
+	(*timestamppb.Timestamp)(nil),        // 12: google.protobuf.Timestamp
+	(*featurev1.Feature)(nil),            // 13: feature.v1.Feature
 }
 var file_property_proto_depIdxs = []int32{
-	8, // 0: property.v1.Property.created_at:type_name -> google.protobuf.Timestamp
-	8, // 1: property.v1.Property.updated_at:type_name -> google.protobuf.Timestamp
-	0, // 2: property.v1.GetPropertyListResponse.properties:type_name -> property.v1.Property
-	1, // 3: property.v1.PropertyService.CreateProperty:input_type -> property.v1.CreatePropertyRequest
-	2, // 4: property.v1.PropertyService.GetPropertyByID:input_type -> property.v1.GetPropertyByIDRequest
-	3, // 5: property.v1.PropertyService.GetPropertyList:input_type -> property.v1.GetPropertyListRequest
-	5, // 6: property.v1.PropertyService.UpdatePropertyByID:input_type -> property.v1.UpdatePropertyByIDRequest
-	6, // 7: property.v1.PropertyService.DeletePropertyByID:input_type -> property.v1.DeletePropertyByIDRequest
-	0, // 8: property.v1.PropertyService.CreateProperty:output_type -> property.v1.Property
-	0, // 9: property.v1.PropertyService.GetPropertyByID:output_type -> property.v1.Property
-	4, // 10: property.v1.PropertyService.GetPropertyList:output_type -> property.v1.GetPropertyListResponse
-	0, // 11: property.v1.PropertyService.UpdatePropertyByID:output_type -> property.v1.Property
-	7, // 12: property.v1.PropertyService.DeletePropertyByID:output_type -> property.v1.DeletePropertyByIDResponse
-	8, // [8:13] is the sub-list for method output_type
-	3, // [3:8] is the sub-list for method input_type
-	3, // [3:3] is the sub-list for extension type_name
-	3, // [3:3] is the sub-list for extension extendee
-	0, // [0:3] is the sub-list for field type_name
+	12, // 0: property.v1.Property.created_at:type_name -> google.protobuf.Timestamp
+	12, // 1: property.v1.Property.updated_at:type_name -> google.protobuf.Timestamp
+	0,  // 2: property.v1.GetPropertyListResponse.properties:type_name -> property.v1.Property
+	13, // 3: property.v1.ListPropertyFeaturesResponse.features:type_name -> feature.v1.Feature
+	1,  // 4: property.v1.PropertyService.CreateProperty:input_type -> property.v1.CreatePropertyRequest
+	2,  // 5: property.v1.PropertyService.GetPropertyByID:input_type -> property.v1.GetPropertyByIDRequest
+	3,  // 6: property.v1.PropertyService.GetPropertyList:input_type -> property.v1.GetPropertyListRequest
+	5,  // 7: property.v1.PropertyService.UpdatePropertyByID:input_type -> property.v1.UpdatePropertyByIDRequest
+	6,  // 8: property.v1.PropertyService.DeletePropertyByID:input_type -> property.v1.DeletePropertyByIDRequest
+	8,  // 9: property.v1.PropertyService.AddPropertyFeature:input_type -> property.v1.AddPropertyFeatureRequest
+	9,  // 10: property.v1.PropertyService.RemovePropertyFeature:input_type -> property.v1.RemovePropertyFeatureRequest
+	10, // 11: property.v1.PropertyService.ListPropertyFeatures:input_type -> property.v1.ListPropertyFeaturesRequest
+	0,  // 12: property.v1.PropertyService.CreateProperty:output_type -> property.v1.Property
+	0,  // 13: property.v1.PropertyService.GetPropertyByID:output_type -> property.v1.Property
+	4,  // 14: property.v1.PropertyService.GetPropertyList:output_type -> property.v1.GetPropertyListResponse
+	0,  // 15: property.v1.PropertyService.UpdatePropertyByID:output_type -> property.v1.Property
+	7,  // 16: property.v1.PropertyService.DeletePropertyByID:output_type -> property.v1.DeletePropertyByIDResponse
+	11, // 17: property.v1.PropertyService.AddPropertyFeature:output_type -> property.v1.ListPropertyFeaturesResponse
+	7,  // 18: property.v1.PropertyService.RemovePropertyFeature:output_type -> property.v1.DeletePropertyByIDResponse
+	11, // 19: property.v1.PropertyService.ListPropertyFeatures:output_type -> property.v1.ListPropertyFeaturesResponse
+	12, // [12:20] is the sub-list for method output_type
+	4,  // [4:12] is the sub-list for method input_type
+	4,  // [4:4] is the sub-list for extension type_name
+	4,  // [4:4] is the sub-list for extension extendee
+	0,  // [0:4] is the sub-list for field type_name
 }
 
 func init() { file_property_proto_init() }
@@ -647,7 +871,7 @@ func file_property_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_property_proto_rawDesc), len(file_property_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   8,
+			NumMessages:   12,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

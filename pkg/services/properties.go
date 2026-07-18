@@ -6,6 +6,7 @@ import (
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 
 	"github.com/sushiAlii/torogan-be/internal/models"
 )
@@ -106,4 +107,44 @@ func (s *PropertyService) DeletePropertyByID(id uuid.UUID) error {
 	}
 
 	return nil
+}
+
+func (s *PropertyService) AddPropertyFeature(propertyID uuid.UUID, featureID uint) error {
+	link := models.PropertyFeature{
+		PropertyID: propertyID,
+		FeatureID:  featureID,
+	}
+
+	if err := s.db.Clauses(clause.OnConflict{DoNothing: true}).Create(&link).Error; err != nil {
+		return fmt.Errorf("failed to attach feature to property: %w", err)
+	}
+
+	return nil
+}
+
+func (s *PropertyService) RemovePropertyFeature(propertyID uuid.UUID, featureID uint) error {
+	result := s.db.Where("property_id = ? AND feature_id = ?", propertyID, featureID).Delete(&models.PropertyFeature{})
+	if result.Error != nil {
+		return fmt.Errorf("failed to detach feature from property: %w", result.Error)
+	}
+
+	if result.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+
+	return nil
+}
+
+func (s *PropertyService) ListPropertyFeatures(propertyID uuid.UUID) ([]models.Feature, error) {
+	var features []models.Feature
+	err := s.db.Model(&models.Feature{}).
+		Joins("JOIN properties_features pf ON pf.feature_id = features.id").
+		Where("pf.property_id = ?", propertyID).
+		Order("features.id ASC").
+		Find(&features).Error
+	if err != nil {
+		return nil, fmt.Errorf("failed to list property features: %w", err)
+	}
+
+	return features, nil
 }

@@ -6,6 +6,7 @@ option go_package = "github.com/sushiAlii/torogan-be/gen/propertyv1;propertyv1";
 
 import "google/protobuf/timestamp.proto";
 import "google/api/annotations.proto";
+import "feature.proto";
 
 // 1. Core Data Structure (The base object shared across APIs)
 message Property {
@@ -61,6 +62,25 @@ message DeletePropertyByIDResponse {
   string message = 2;
 }
 
+// 7. PROPERTY <-> FEATURE SUB-RESOURCE MESSAGES
+message AddPropertyFeatureRequest {
+  string property_id = 1;
+  int32 feature_id = 2;
+}
+
+message RemovePropertyFeatureRequest {
+  string property_id = 1;
+  int32 feature_id = 2;
+}
+
+message ListPropertyFeaturesRequest {
+  string property_id = 1;
+}
+
+message ListPropertyFeaturesResponse {
+  repeated feature.v1.Feature features = 1;
+}
+
 service PropertyService {
   rpc CreateProperty(CreatePropertyRequest) returns (Property) {
     option (google.api.http) = {
@@ -87,6 +107,22 @@ service PropertyService {
   rpc DeletePropertyByID(DeletePropertyByIDRequest) returns (DeletePropertyByIDResponse) {
     option (google.api.http) = {
       delete: "/v1/properties/{id}"
+    };
+  }
+  rpc AddPropertyFeature(AddPropertyFeatureRequest) returns (ListPropertyFeaturesResponse) {
+    option (google.api.http) = {
+      post: "/v1/properties/{property_id}/features"
+      body: "*"
+    };
+  }
+  rpc RemovePropertyFeature(RemovePropertyFeatureRequest) returns (DeletePropertyByIDResponse) {
+    option (google.api.http) = {
+      delete: "/v1/properties/{property_id}/features/{feature_id}"
+    };
+  }
+  rpc ListPropertyFeatures(ListPropertyFeaturesRequest) returns (ListPropertyFeaturesResponse) {
+    option (google.api.http) = {
+      get: "/v1/properties/{property_id}/features"
     };
   }
 }

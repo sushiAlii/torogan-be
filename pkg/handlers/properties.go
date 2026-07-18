@@ -10,6 +10,7 @@ import (
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 
+	featurev1 "github.com/sushiAlii/torogan-be/gen/featurev1"
 	pb "github.com/sushiAlii/torogan-be/gen/propertyv1"
 	"github.com/sushiAlii/torogan-be/internal/models"
 	"github.com/sushiAlii/torogan-be/pkg/services"
@@ -162,6 +163,79 @@ func (h *PropertiesHandler) DeletePropertyByID(ctx context.Context, req *connect
 		Success: true,
 		Message: fmt.Sprintf("property with ID %s has been deleted", propertyUUID.String()),
 	}), nil
+}
+
+func (h *PropertiesHandler) AddPropertyFeature(ctx context.Context, req *connect.Request[pb.AddPropertyFeatureRequest]) (*connect.Response[pb.ListPropertyFeaturesResponse], error) {
+	msg := req.Msg
+
+	propertyUUID, err := uuid.Parse(msg.GetPropertyId())
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("invalid property ID: %w", err))
+	}
+
+	if err := h.propertiesService.AddPropertyFeature(propertyUUID, uint(msg.GetFeatureId())); err != nil {
+		return nil, connect.NewError(connect.CodeInternal, err)
+	}
+
+	features, err := h.propertiesService.ListPropertyFeatures(propertyUUID)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, err)
+	}
+
+	return connect.NewResponse(&pb.ListPropertyFeaturesResponse{
+		Features: h.mapFeaturesToProto(features),
+	}), nil
+}
+
+func (h *PropertiesHandler) RemovePropertyFeature(ctx context.Context, req *connect.Request[pb.RemovePropertyFeatureRequest]) (*connect.Response[pb.DeletePropertyByIDResponse], error) {
+	msg := req.Msg
+
+	propertyUUID, err := uuid.Parse(msg.GetPropertyId())
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("invalid property ID: %w", err))
+	}
+
+	if err := h.propertiesService.RemovePropertyFeature(propertyUUID, uint(msg.GetFeatureId())); err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("property feature not found"))
+		}
+		return nil, connect.NewError(connect.CodeInternal, err)
+	}
+
+	return connect.NewResponse(&pb.DeletePropertyByIDResponse{
+		Success: true,
+		Message: "feature has been removed from property",
+	}), nil
+}
+
+func (h *PropertiesHandler) ListPropertyFeatures(ctx context.Context, req *connect.Request[pb.ListPropertyFeaturesRequest]) (*connect.Response[pb.ListPropertyFeaturesResponse], error) {
+	msg := req.Msg
+
+	propertyUUID, err := uuid.Parse(msg.GetPropertyId())
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("invalid property ID: %w", err))
+	}
+
+	features, err := h.propertiesService.ListPropertyFeatures(propertyUUID)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, err)
+	}
+
+	return connect.NewResponse(&pb.ListPropertyFeaturesResponse{
+		Features: h.mapFeaturesToProto(features),
+	}), nil
+}
+
+func (h *PropertiesHandler) mapFeaturesToProto(dbFeatures []models.Feature) []*featurev1.Feature {
+	protoFeatures := make([]*featurev1.Feature, len(dbFeatures))
+	for i, f := range dbFeatures {
+		protoFeatures[i] = &featurev1.Feature{
+			Id:   int32(f.ID),
+			Name: f.Name,
+		}
+	}
+
+	return protoFeatures
 }
 
 func (h *PropertiesHandler) mapToProto(dbProp *models.Property) *pb.Property {
