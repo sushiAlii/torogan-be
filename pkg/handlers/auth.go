@@ -99,6 +99,11 @@ func (h *AuthHandler) RefreshToken(ctx context.Context, req *connect.Request[aut
 		return nil, connect.NewError(connect.CodeUnauthenticated, err)
 	}
 
+	user, resolvedRole, err := h.authService.GetUserByID(userID)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeUnauthenticated, err)
+	}
+
 	accessToken, err := h.authService.GenerateAccessToken(userID, role)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
@@ -106,7 +111,23 @@ func (h *AuthHandler) RefreshToken(ctx context.Context, req *connect.Request[aut
 
 	return connect.NewResponse(&authv1.RefreshTokenResponse{
 		AccessToken: accessToken,
+		User: &authv1.User{
+			Id:        user.ID.String(),
+			Email:     user.Email,
+			AvatarUrl: user.AvatarURL,
+			Role:      resolvedRole,
+		},
 	}), nil
+}
+
+func (h *AuthHandler) Logout(ctx context.Context, req *connect.Request[authv1.LogoutRequest]) (*connect.Response[authv1.LogoutResponse], error) {
+	res := connect.NewResponse(&authv1.LogoutResponse{
+		Success: true,
+	})
+
+	clearRefreshCookie(res.Header())
+
+	return res, nil
 }
 
 func setRefreshCookie(header http.Header, token string) {
@@ -115,6 +136,20 @@ func setRefreshCookie(header http.Header, token string) {
 		Value:    token,
 		Path:     "/",
 		MaxAge:   int((7 * 24 * time.Hour).Seconds()),
+		HttpOnly: true,
+		Secure:   true,
+		SameSite: http.SameSiteStrictMode,
+	}
+
+	header.Add("Set-Cookie", cookie.String())
+}
+
+func clearRefreshCookie(header http.Header) {
+	cookie := &http.Cookie{
+		Name:     "refresh_token",
+		Value:    "",
+		Path:     "/",
+		MaxAge:   -1,
 		HttpOnly: true,
 		Secure:   true,
 		SameSite: http.SameSiteStrictMode,

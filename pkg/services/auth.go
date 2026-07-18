@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 	"google.golang.org/api/idtoken"
 	"gorm.io/gorm"
@@ -177,6 +178,30 @@ func (as *AuthService) SignInWithGoogle(ctx context.Context, idTokenStr string) 
 	}
 
 	return &user, roleName, tokens, nil
+}
+
+// GetUserByID loads a user and their resolved role name by user ID string
+// (as carried in JWT "sub" claims).
+func (as *AuthService) GetUserByID(userID string) (*models.User, string, error) {
+	parsedID, err := uuid.Parse(userID)
+	if err != nil {
+		return nil, "", fmt.Errorf("invalid user id: %w", err)
+	}
+
+	var user models.User
+	if err := as.db.First(&user, "id = ?", parsedID).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, "", err
+		}
+		return nil, "", fmt.Errorf("failed to fetch user: %w", err)
+	}
+
+	var role models.Role
+	if err := as.db.First(&role, "id = ?", user.RoleID).Error; err != nil {
+		return nil, "", fmt.Errorf("failed to resolve user role: %w", err)
+	}
+
+	return &user, role.Name, nil
 }
 
 // GenerateAccessToken mints a short-lived (15 min) HS256 access token.

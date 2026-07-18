@@ -365,6 +365,7 @@ func (*RefreshTokenRequest) Descriptor() ([]byte, []int) {
 type RefreshTokenResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	AccessToken   string                 `protobuf:"bytes,1,opt,name=access_token,json=accessToken,proto3" json:"access_token,omitempty"`
+	User          *User                  `protobuf:"bytes,2,opt,name=user,proto3" json:"user,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -406,6 +407,93 @@ func (x *RefreshTokenResponse) GetAccessToken() string {
 	return ""
 }
 
+func (x *RefreshTokenResponse) GetUser() *User {
+	if x != nil {
+		return x.User
+	}
+	return nil
+}
+
+type LogoutRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *LogoutRequest) Reset() {
+	*x = LogoutRequest{}
+	mi := &file_auth_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *LogoutRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*LogoutRequest) ProtoMessage() {}
+
+func (x *LogoutRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_auth_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use LogoutRequest.ProtoReflect.Descriptor instead.
+func (*LogoutRequest) Descriptor() ([]byte, []int) {
+	return file_auth_proto_rawDescGZIP(), []int{8}
+}
+
+type LogoutResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *LogoutResponse) Reset() {
+	*x = LogoutResponse{}
+	mi := &file_auth_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *LogoutResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*LogoutResponse) ProtoMessage() {}
+
+func (x *LogoutResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_auth_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use LogoutResponse.ProtoReflect.Descriptor instead.
+func (*LogoutResponse) Descriptor() ([]byte, []int) {
+	return file_auth_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *LogoutResponse) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
 type User struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
@@ -418,7 +506,7 @@ type User struct {
 
 func (x *User) Reset() {
 	*x = User{}
-	mi := &file_auth_proto_msgTypes[8]
+	mi := &file_auth_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -430,7 +518,7 @@ func (x *User) String() string {
 func (*User) ProtoMessage() {}
 
 func (x *User) ProtoReflect() protoreflect.Message {
-	mi := &file_auth_proto_msgTypes[8]
+	mi := &file_auth_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -443,7 +531,7 @@ func (x *User) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use User.ProtoReflect.Descriptor instead.
 func (*User) Descriptor() ([]byte, []int) {
-	return file_auth_proto_rawDescGZIP(), []int{8}
+	return file_auth_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *User) GetId() string {
@@ -497,20 +585,25 @@ const file_auth_proto_rawDesc = "" +
 	"\rLoginResponse\x12!\n" +
 	"\faccess_token\x18\x01 \x01(\tR\vaccessToken\x12!\n" +
 	"\x04user\x18\x02 \x01(\v2\r.auth.v1.UserR\x04user\"\x15\n" +
-	"\x13RefreshTokenRequest\"9\n" +
+	"\x13RefreshTokenRequest\"\\\n" +
 	"\x14RefreshTokenResponse\x12!\n" +
-	"\faccess_token\x18\x01 \x01(\tR\vaccessToken\"_\n" +
+	"\faccess_token\x18\x01 \x01(\tR\vaccessToken\x12!\n" +
+	"\x04user\x18\x02 \x01(\v2\r.auth.v1.UserR\x04user\"\x0f\n" +
+	"\rLogoutRequest\"*\n" +
+	"\x0eLogoutResponse\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\"_\n" +
 	"\x04User\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
 	"\x05email\x18\x02 \x01(\tR\x05email\x12\x1d\n" +
 	"\n" +
 	"avatar_url\x18\x03 \x01(\tR\tavatarUrl\x12\x12\n" +
-	"\x04role\x18\x04 \x01(\tR\x04role2\xa5\x03\n" +
+	"\x04role\x18\x04 \x01(\tR\x04role2\xfc\x03\n" +
 	"\vAuthService\x12z\n" +
 	"\x10SignInWithGoogle\x12 .auth.v1.SignInWithGoogleRequest\x1a!.auth.v1.SignInWithGoogleResponse\"!\x82\xd3\xe4\x93\x02\x1b:\x01*\"\x16/v1/auth/google/signin\x12]\n" +
 	"\bRegister\x12\x18.auth.v1.RegisterRequest\x1a\x19.auth.v1.RegisterResponse\"\x1c\x82\xd3\xe4\x93\x02\x16:\x01*\"\x11/v1/auth/register\x12Q\n" +
 	"\x05Login\x12\x15.auth.v1.LoginRequest\x1a\x16.auth.v1.LoginResponse\"\x19\x82\xd3\xe4\x93\x02\x13:\x01*\"\x0e/v1/auth/login\x12h\n" +
-	"\fRefreshToken\x12\x1c.auth.v1.RefreshTokenRequest\x1a\x1d.auth.v1.RefreshTokenResponse\"\x1b\x82\xd3\xe4\x93\x02\x15:\x01*\"\x10/v1/auth/refreshB3Z1github.com/sushiAlii/torogan-be/gen/authv1;authv1b\x06proto3"
+	"\fRefreshToken\x12\x1c.auth.v1.RefreshTokenRequest\x1a\x1d.auth.v1.RefreshTokenResponse\"\x1b\x82\xd3\xe4\x93\x02\x15:\x01*\"\x10/v1/auth/refresh\x12U\n" +
+	"\x06Logout\x12\x16.auth.v1.LogoutRequest\x1a\x17.auth.v1.LogoutResponse\"\x1a\x82\xd3\xe4\x93\x02\x14:\x01*\"\x0f/v1/auth/logoutB3Z1github.com/sushiAlii/torogan-be/gen/authv1;authv1b\x06proto3"
 
 var (
 	file_auth_proto_rawDescOnce sync.Once
@@ -524,7 +617,7 @@ func file_auth_proto_rawDescGZIP() []byte {
 	return file_auth_proto_rawDescData
 }
 
-var file_auth_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
+var file_auth_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
 var file_auth_proto_goTypes = []any{
 	(*SignInWithGoogleRequest)(nil),  // 0: auth.v1.SignInWithGoogleRequest
 	(*SignInWithGoogleResponse)(nil), // 1: auth.v1.SignInWithGoogleResponse
@@ -534,25 +627,30 @@ var file_auth_proto_goTypes = []any{
 	(*LoginResponse)(nil),            // 5: auth.v1.LoginResponse
 	(*RefreshTokenRequest)(nil),      // 6: auth.v1.RefreshTokenRequest
 	(*RefreshTokenResponse)(nil),     // 7: auth.v1.RefreshTokenResponse
-	(*User)(nil),                     // 8: auth.v1.User
+	(*LogoutRequest)(nil),            // 8: auth.v1.LogoutRequest
+	(*LogoutResponse)(nil),           // 9: auth.v1.LogoutResponse
+	(*User)(nil),                     // 10: auth.v1.User
 }
 var file_auth_proto_depIdxs = []int32{
-	8, // 0: auth.v1.SignInWithGoogleResponse.user:type_name -> auth.v1.User
-	8, // 1: auth.v1.RegisterResponse.user:type_name -> auth.v1.User
-	8, // 2: auth.v1.LoginResponse.user:type_name -> auth.v1.User
-	0, // 3: auth.v1.AuthService.SignInWithGoogle:input_type -> auth.v1.SignInWithGoogleRequest
-	2, // 4: auth.v1.AuthService.Register:input_type -> auth.v1.RegisterRequest
-	4, // 5: auth.v1.AuthService.Login:input_type -> auth.v1.LoginRequest
-	6, // 6: auth.v1.AuthService.RefreshToken:input_type -> auth.v1.RefreshTokenRequest
-	1, // 7: auth.v1.AuthService.SignInWithGoogle:output_type -> auth.v1.SignInWithGoogleResponse
-	3, // 8: auth.v1.AuthService.Register:output_type -> auth.v1.RegisterResponse
-	5, // 9: auth.v1.AuthService.Login:output_type -> auth.v1.LoginResponse
-	7, // 10: auth.v1.AuthService.RefreshToken:output_type -> auth.v1.RefreshTokenResponse
-	7, // [7:11] is the sub-list for method output_type
-	3, // [3:7] is the sub-list for method input_type
-	3, // [3:3] is the sub-list for extension type_name
-	3, // [3:3] is the sub-list for extension extendee
-	0, // [0:3] is the sub-list for field type_name
+	10, // 0: auth.v1.SignInWithGoogleResponse.user:type_name -> auth.v1.User
+	10, // 1: auth.v1.RegisterResponse.user:type_name -> auth.v1.User
+	10, // 2: auth.v1.LoginResponse.user:type_name -> auth.v1.User
+	10, // 3: auth.v1.RefreshTokenResponse.user:type_name -> auth.v1.User
+	0,  // 4: auth.v1.AuthService.SignInWithGoogle:input_type -> auth.v1.SignInWithGoogleRequest
+	2,  // 5: auth.v1.AuthService.Register:input_type -> auth.v1.RegisterRequest
+	4,  // 6: auth.v1.AuthService.Login:input_type -> auth.v1.LoginRequest
+	6,  // 7: auth.v1.AuthService.RefreshToken:input_type -> auth.v1.RefreshTokenRequest
+	8,  // 8: auth.v1.AuthService.Logout:input_type -> auth.v1.LogoutRequest
+	1,  // 9: auth.v1.AuthService.SignInWithGoogle:output_type -> auth.v1.SignInWithGoogleResponse
+	3,  // 10: auth.v1.AuthService.Register:output_type -> auth.v1.RegisterResponse
+	5,  // 11: auth.v1.AuthService.Login:output_type -> auth.v1.LoginResponse
+	7,  // 12: auth.v1.AuthService.RefreshToken:output_type -> auth.v1.RefreshTokenResponse
+	9,  // 13: auth.v1.AuthService.Logout:output_type -> auth.v1.LogoutResponse
+	9,  // [9:14] is the sub-list for method output_type
+	4,  // [4:9] is the sub-list for method input_type
+	4,  // [4:4] is the sub-list for extension type_name
+	4,  // [4:4] is the sub-list for extension extendee
+	0,  // [0:4] is the sub-list for field type_name
 }
 
 func init() { file_auth_proto_init() }
@@ -566,7 +664,7 @@ func file_auth_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_auth_proto_rawDesc), len(file_auth_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   9,
+			NumMessages:   11,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
