@@ -1,0 +1,76 @@
+syntax = "proto3";
+
+package auth.v1;
+
+option go_package = "github.com/sushiAlii/torogan-be/gen/authv1;authv1";
+
+import "google/api/annotations.proto";
+
+service AuthService {
+    rpc SignInWithGoogle(SignInWithGoogleRequest) returns (SignInWithGoogleResponse) {
+        option (google.api.http) = {
+            post: "/v1/auth/google/signin"
+            body: "*"
+        };
+    }
+    rpc Register(RegisterRequest) returns (RegisterResponse) {
+        option (google.api.http) = {
+            post: "/v1/auth/register"
+            body: "*"
+        };
+    }
+    rpc Login(LoginRequest) returns (LoginResponse) {
+        option (google.api.http) = {
+            post: "/v1/auth/login"
+            body: "*"
+        };
+    }
+    rpc RefreshToken(RefreshTokenRequest) returns (RefreshTokenResponse) {
+        option (google.api.http) = {
+            post: "/v1/auth/refresh"
+            body: "*"
+        };
+    }
+}
+
+message SignInWithGoogleRequest {
+    string id_token = 1;
+}
+
+message SignInWithGoogleResponse {
+    string access_token = 1;
+    User user = 2;
+}
+
+message RegisterRequest {
+    string email = 1;
+    string password = 2;
+}
+
+message RegisterResponse {
+    string access_token = 1;
+    User user = 2;
+}
+
+message LoginRequest {
+    string email = 1;
+    string password = 2;
+}
+
+message LoginResponse {
+    string access_token = 1;
+    User user = 2;
+}
+
+message RefreshTokenRequest {}
+
+message RefreshTokenResponse {
+    string access_token = 1;
+}
+
+message User {
+  string id = 1;
+  string email = 2;
+  string avatar_url = 3;
+  string role = 4;
+}

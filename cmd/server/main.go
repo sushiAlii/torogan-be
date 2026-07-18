@@ -12,6 +12,7 @@ import (
 
 	"github.com/sushiAlii/torogan-be/gen/propertyv1/propertyv1connect"
 	"github.com/sushiAlii/torogan-be/internal/database"
+	"github.com/sushiAlii/torogan-be/pkg/handlers"
 	"github.com/sushiAlii/torogan-be/pkg/services"
 
 	utils "github.com/sushiAlii/torogan-be/pkg"
@@ -40,8 +41,9 @@ func main() {
 
 	// Property Service
 	ps := services.NewPropertyService(db)
+	ph := handlers.NewPropertiesHandler(ps)
 
-	path, handler := propertyv1connect.NewPropertyServiceHandler(ps)
+	path, handler := propertyv1connect.NewPropertyServiceHandler(ph)
 
 	// Vanguard Service
 	vs := vanguard.NewService(path, handler)
