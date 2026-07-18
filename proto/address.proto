@@ -1,0 +1,94 @@
+syntax = "proto3";
+
+package address.v1;
+
+option go_package = "github.com/sushiAlii/torogan-be/gen/addressv1;addressv1";
+
+import "google/protobuf/timestamp.proto";
+import "google/api/annotations.proto";
+
+message Address {
+  string id = 1;
+  string street_address = 2;
+  optional string extended_address = 3;
+  string city = 4;
+  string state = 5;
+  string country_code = 6;
+  double latitude = 7;
+  double longitude = 8;
+  optional string google_place_id = 9;
+  string property_id = 10;
+  google.protobuf.Timestamp created_at = 11;
+  google.protobuf.Timestamp updated_at = 12;
+}
+
+message CreateAddressRequest {
+  string street_address = 1;
+  optional string extended_address = 2;
+  string city = 3;
+  string state = 4;
+  string country_code = 5;
+  double latitude = 6;
+  double longitude = 7;
+  optional string google_place_id = 8;
+  string property_id = 9;
+}
+
+message GetAddressByIDRequest {
+  string id = 1;
+}
+
+message GetAddressByPropertyIDRequest {
+  string property_id = 1;
+}
+
+message UpdateAddressByIDRequest {
+  string id = 1;
+  string street_address = 2;
+  optional string extended_address = 3;
+  string city = 4;
+  string state = 5;
+  string country_code = 6;
+  double latitude = 7;
+  double longitude = 8;
+  optional string google_place_id = 9;
+}
+
+message DeleteAddressByIDRequest {
+  string id = 1;
+}
+
+message DeleteAddressByIDResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+service AddressService {
+  rpc CreateAddress(CreateAddressRequest) returns (Address) {
+    option (google.api.http) = {
+      post: "/v1/addresses"
+      body: "*"
+    };
+  }
+  rpc GetAddressByID(GetAddressByIDRequest) returns (Address) {
+    option (google.api.http) = {
+      get: "/v1/addresses/{id}"
+    };
+  }
+  rpc GetAddressByPropertyID(GetAddressByPropertyIDRequest) returns (Address) {
+    option (google.api.http) = {
+      get: "/v1/properties/{property_id}/address"
+    };
+  }
+  rpc UpdateAddressByID(UpdateAddressByIDRequest) returns (Address) {
+    option (google.api.http) = {
+      put: "/v1/addresses/{id}"
+      body: "*"
+    };
+  }
+  rpc DeleteAddressByID(DeleteAddressByIDRequest) returns (DeleteAddressByIDResponse) {
+    option (google.api.http) = {
+      delete: "/v1/addresses/{id}"
+    };
+  }
+}
