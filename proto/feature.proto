@@ -1,0 +1,79 @@
+syntax = "proto3";
+
+package feature.v1;
+
+option go_package = "github.com/sushiAlii/torogan-be/gen/featurev1;featurev1";
+
+import "google/protobuf/timestamp.proto";
+import "google/api/annotations.proto";
+
+message Feature {
+  int32 id = 1;
+  string name = 2;
+  google.protobuf.Timestamp created_at = 3;
+  google.protobuf.Timestamp updated_at = 4;
+}
+
+message CreateFeatureRequest {
+  string name = 1;
+}
+
+message GetFeatureByIDRequest {
+  int32 id = 1;
+}
+
+message ListFeaturesRequest {
+  string search = 1;
+  int32 limit = 2;
+  int32 cursor = 3;
+}
+
+message ListFeaturesResponse {
+  repeated Feature features = 1;
+  int32 next_cursor = 2;
+  int32 total_count = 3;
+}
+
+message UpdateFeatureByIDRequest {
+  int32 id = 1;
+  string name = 2;
+}
+
+message DeleteFeatureByIDRequest {
+  int32 id = 1;
+}
+
+message DeleteFeatureByIDResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+service FeatureService {
+  rpc CreateFeature(CreateFeatureRequest) returns (Feature) {
+    option (google.api.http) = {
+      post: "/v1/features"
+      body: "*"
+    };
+  }
+  rpc GetFeatureByID(GetFeatureByIDRequest) returns (Feature) {
+    option (google.api.http) = {
+      get: "/v1/features/{id}"
+    };
+  }
+  rpc ListFeatures(ListFeaturesRequest) returns (ListFeaturesResponse) {
+    option (google.api.http) = {
+      get: "/v1/features"
+    };
+  }
+  rpc UpdateFeatureByID(UpdateFeatureByIDRequest) returns (Feature) {
+    option (google.api.http) = {
+      put: "/v1/features/{id}"
+      body: "*"
+    };
+  }
+  rpc DeleteFeatureByID(DeleteFeatureByIDRequest) returns (DeleteFeatureByIDResponse) {
+    option (google.api.http) = {
+      delete: "/v1/features/{id}"
+    };
+  }
+}
