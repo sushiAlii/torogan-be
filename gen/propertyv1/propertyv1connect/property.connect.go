@@ -57,6 +57,15 @@ const (
 	// PropertyServiceListPropertyFeaturesProcedure is the fully-qualified name of the PropertyService's
 	// ListPropertyFeatures RPC.
 	PropertyServiceListPropertyFeaturesProcedure = "/property.v1.PropertyService/ListPropertyFeatures"
+	// PropertyServiceAddPropertyImageProcedure is the fully-qualified name of the PropertyService's
+	// AddPropertyImage RPC.
+	PropertyServiceAddPropertyImageProcedure = "/property.v1.PropertyService/AddPropertyImage"
+	// PropertyServiceRemovePropertyImageProcedure is the fully-qualified name of the PropertyService's
+	// RemovePropertyImage RPC.
+	PropertyServiceRemovePropertyImageProcedure = "/property.v1.PropertyService/RemovePropertyImage"
+	// PropertyServiceListPropertyImagesProcedure is the fully-qualified name of the PropertyService's
+	// ListPropertyImages RPC.
+	PropertyServiceListPropertyImagesProcedure = "/property.v1.PropertyService/ListPropertyImages"
 )
 
 // PropertyServiceClient is a client for the property.v1.PropertyService service.
@@ -69,6 +78,9 @@ type PropertyServiceClient interface {
 	AddPropertyFeature(context.Context, *connect.Request[propertyv1.AddPropertyFeatureRequest]) (*connect.Response[propertyv1.ListPropertyFeaturesResponse], error)
 	RemovePropertyFeature(context.Context, *connect.Request[propertyv1.RemovePropertyFeatureRequest]) (*connect.Response[propertyv1.DeletePropertyByIDResponse], error)
 	ListPropertyFeatures(context.Context, *connect.Request[propertyv1.ListPropertyFeaturesRequest]) (*connect.Response[propertyv1.ListPropertyFeaturesResponse], error)
+	AddPropertyImage(context.Context, *connect.Request[propertyv1.AddPropertyImageRequest]) (*connect.Response[propertyv1.ListPropertyImagesResponse], error)
+	RemovePropertyImage(context.Context, *connect.Request[propertyv1.RemovePropertyImageRequest]) (*connect.Response[propertyv1.DeletePropertyByIDResponse], error)
+	ListPropertyImages(context.Context, *connect.Request[propertyv1.ListPropertyImagesRequest]) (*connect.Response[propertyv1.ListPropertyImagesResponse], error)
 }
 
 // NewPropertyServiceClient constructs a client for the property.v1.PropertyService service. By
@@ -130,6 +142,24 @@ func NewPropertyServiceClient(httpClient connect.HTTPClient, baseURL string, opt
 			connect.WithSchema(propertyServiceMethods.ByName("ListPropertyFeatures")),
 			connect.WithClientOptions(opts...),
 		),
+		addPropertyImage: connect.NewClient[propertyv1.AddPropertyImageRequest, propertyv1.ListPropertyImagesResponse](
+			httpClient,
+			baseURL+PropertyServiceAddPropertyImageProcedure,
+			connect.WithSchema(propertyServiceMethods.ByName("AddPropertyImage")),
+			connect.WithClientOptions(opts...),
+		),
+		removePropertyImage: connect.NewClient[propertyv1.RemovePropertyImageRequest, propertyv1.DeletePropertyByIDResponse](
+			httpClient,
+			baseURL+PropertyServiceRemovePropertyImageProcedure,
+			connect.WithSchema(propertyServiceMethods.ByName("RemovePropertyImage")),
+			connect.WithClientOptions(opts...),
+		),
+		listPropertyImages: connect.NewClient[propertyv1.ListPropertyImagesRequest, propertyv1.ListPropertyImagesResponse](
+			httpClient,
+			baseURL+PropertyServiceListPropertyImagesProcedure,
+			connect.WithSchema(propertyServiceMethods.ByName("ListPropertyImages")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
@@ -143,6 +173,9 @@ type propertyServiceClient struct {
 	addPropertyFeature    *connect.Client[propertyv1.AddPropertyFeatureRequest, propertyv1.ListPropertyFeaturesResponse]
 	removePropertyFeature *connect.Client[propertyv1.RemovePropertyFeatureRequest, propertyv1.DeletePropertyByIDResponse]
 	listPropertyFeatures  *connect.Client[propertyv1.ListPropertyFeaturesRequest, propertyv1.ListPropertyFeaturesResponse]
+	addPropertyImage      *connect.Client[propertyv1.AddPropertyImageRequest, propertyv1.ListPropertyImagesResponse]
+	removePropertyImage   *connect.Client[propertyv1.RemovePropertyImageRequest, propertyv1.DeletePropertyByIDResponse]
+	listPropertyImages    *connect.Client[propertyv1.ListPropertyImagesRequest, propertyv1.ListPropertyImagesResponse]
 }
 
 // CreateProperty calls property.v1.PropertyService.CreateProperty.
@@ -185,6 +218,21 @@ func (c *propertyServiceClient) ListPropertyFeatures(ctx context.Context, req *c
 	return c.listPropertyFeatures.CallUnary(ctx, req)
 }
 
+// AddPropertyImage calls property.v1.PropertyService.AddPropertyImage.
+func (c *propertyServiceClient) AddPropertyImage(ctx context.Context, req *connect.Request[propertyv1.AddPropertyImageRequest]) (*connect.Response[propertyv1.ListPropertyImagesResponse], error) {
+	return c.addPropertyImage.CallUnary(ctx, req)
+}
+
+// RemovePropertyImage calls property.v1.PropertyService.RemovePropertyImage.
+func (c *propertyServiceClient) RemovePropertyImage(ctx context.Context, req *connect.Request[propertyv1.RemovePropertyImageRequest]) (*connect.Response[propertyv1.DeletePropertyByIDResponse], error) {
+	return c.removePropertyImage.CallUnary(ctx, req)
+}
+
+// ListPropertyImages calls property.v1.PropertyService.ListPropertyImages.
+func (c *propertyServiceClient) ListPropertyImages(ctx context.Context, req *connect.Request[propertyv1.ListPropertyImagesRequest]) (*connect.Response[propertyv1.ListPropertyImagesResponse], error) {
+	return c.listPropertyImages.CallUnary(ctx, req)
+}
+
 // PropertyServiceHandler is an implementation of the property.v1.PropertyService service.
 type PropertyServiceHandler interface {
 	CreateProperty(context.Context, *connect.Request[propertyv1.CreatePropertyRequest]) (*connect.Response[propertyv1.Property], error)
@@ -195,6 +243,9 @@ type PropertyServiceHandler interface {
 	AddPropertyFeature(context.Context, *connect.Request[propertyv1.AddPropertyFeatureRequest]) (*connect.Response[propertyv1.ListPropertyFeaturesResponse], error)
 	RemovePropertyFeature(context.Context, *connect.Request[propertyv1.RemovePropertyFeatureRequest]) (*connect.Response[propertyv1.DeletePropertyByIDResponse], error)
 	ListPropertyFeatures(context.Context, *connect.Request[propertyv1.ListPropertyFeaturesRequest]) (*connect.Response[propertyv1.ListPropertyFeaturesResponse], error)
+	AddPropertyImage(context.Context, *connect.Request[propertyv1.AddPropertyImageRequest]) (*connect.Response[propertyv1.ListPropertyImagesResponse], error)
+	RemovePropertyImage(context.Context, *connect.Request[propertyv1.RemovePropertyImageRequest]) (*connect.Response[propertyv1.DeletePropertyByIDResponse], error)
+	ListPropertyImages(context.Context, *connect.Request[propertyv1.ListPropertyImagesRequest]) (*connect.Response[propertyv1.ListPropertyImagesResponse], error)
 }
 
 // NewPropertyServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -252,6 +303,24 @@ func NewPropertyServiceHandler(svc PropertyServiceHandler, opts ...connect.Handl
 		connect.WithSchema(propertyServiceMethods.ByName("ListPropertyFeatures")),
 		connect.WithHandlerOptions(opts...),
 	)
+	propertyServiceAddPropertyImageHandler := connect.NewUnaryHandler(
+		PropertyServiceAddPropertyImageProcedure,
+		svc.AddPropertyImage,
+		connect.WithSchema(propertyServiceMethods.ByName("AddPropertyImage")),
+		connect.WithHandlerOptions(opts...),
+	)
+	propertyServiceRemovePropertyImageHandler := connect.NewUnaryHandler(
+		PropertyServiceRemovePropertyImageProcedure,
+		svc.RemovePropertyImage,
+		connect.WithSchema(propertyServiceMethods.ByName("RemovePropertyImage")),
+		connect.WithHandlerOptions(opts...),
+	)
+	propertyServiceListPropertyImagesHandler := connect.NewUnaryHandler(
+		PropertyServiceListPropertyImagesProcedure,
+		svc.ListPropertyImages,
+		connect.WithSchema(propertyServiceMethods.ByName("ListPropertyImages")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/property.v1.PropertyService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case PropertyServiceCreatePropertyProcedure:
@@ -270,6 +339,12 @@ func NewPropertyServiceHandler(svc PropertyServiceHandler, opts ...connect.Handl
 			propertyServiceRemovePropertyFeatureHandler.ServeHTTP(w, r)
 		case PropertyServiceListPropertyFeaturesProcedure:
 			propertyServiceListPropertyFeaturesHandler.ServeHTTP(w, r)
+		case PropertyServiceAddPropertyImageProcedure:
+			propertyServiceAddPropertyImageHandler.ServeHTTP(w, r)
+		case PropertyServiceRemovePropertyImageProcedure:
+			propertyServiceRemovePropertyImageHandler.ServeHTTP(w, r)
+		case PropertyServiceListPropertyImagesProcedure:
+			propertyServiceListPropertyImagesHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -309,4 +384,16 @@ func (UnimplementedPropertyServiceHandler) RemovePropertyFeature(context.Context
 
 func (UnimplementedPropertyServiceHandler) ListPropertyFeatures(context.Context, *connect.Request[propertyv1.ListPropertyFeaturesRequest]) (*connect.Response[propertyv1.ListPropertyFeaturesResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("property.v1.PropertyService.ListPropertyFeatures is not implemented"))
+}
+
+func (UnimplementedPropertyServiceHandler) AddPropertyImage(context.Context, *connect.Request[propertyv1.AddPropertyImageRequest]) (*connect.Response[propertyv1.ListPropertyImagesResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("property.v1.PropertyService.AddPropertyImage is not implemented"))
+}
+
+func (UnimplementedPropertyServiceHandler) RemovePropertyImage(context.Context, *connect.Request[propertyv1.RemovePropertyImageRequest]) (*connect.Response[propertyv1.DeletePropertyByIDResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("property.v1.PropertyService.RemovePropertyImage is not implemented"))
+}
+
+func (UnimplementedPropertyServiceHandler) ListPropertyImages(context.Context, *connect.Request[propertyv1.ListPropertyImagesRequest]) (*connect.Response[propertyv1.ListPropertyImagesResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("property.v1.PropertyService.ListPropertyImages is not implemented"))
 }

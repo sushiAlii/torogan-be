@@ -18,6 +18,18 @@ message Property {
   string owner_id = 6;
   google.protobuf.Timestamp created_at = 7;
   google.protobuf.Timestamp updated_at = 8;
+  int32 bedrooms = 9;
+  double bathrooms = 10;
+  string main_image_url = 11; // populated on list and detail responses
+  repeated PropertyImage images = 12; // populated on GetPropertyByID only
+}
+
+message PropertyImage {
+  string id = 1;
+  string property_id = 2;
+  string url = 3;
+  bool is_main = 4;
+  int32 position = 5;
 }
 
 message CreatePropertyRequest {
@@ -26,6 +38,8 @@ message CreatePropertyRequest {
   string description = 3;
   string price = 4;
   string owner_id = 5;
+  int32 bedrooms = 6;
+  double bathrooms = 7;
 }
 
 message GetPropertyByIDRequest {
@@ -50,6 +64,8 @@ message UpdatePropertyByIDRequest {
   double size_sq_m = 3;
   string description = 4;
   string price = 5;
+  int32 bedrooms = 6;
+  double bathrooms = 7;
 }
 
 // 6. DELETE ENDPOINT MESSAGES
@@ -79,6 +95,27 @@ message ListPropertyFeaturesRequest {
 
 message ListPropertyFeaturesResponse {
   repeated feature.v1.Feature features = 1;
+}
+
+// 8. PROPERTY <-> IMAGE SUB-RESOURCE MESSAGES
+message AddPropertyImageRequest {
+  string property_id = 1;
+  string url = 2;
+  bool is_main = 3;
+  int32 position = 4;
+}
+
+message RemovePropertyImageRequest {
+  string property_id = 1;
+  string image_id = 2;
+}
+
+message ListPropertyImagesRequest {
+  string property_id = 1;
+}
+
+message ListPropertyImagesResponse {
+  repeated PropertyImage images = 1;
 }
 
 service PropertyService {
@@ -123,6 +160,22 @@ service PropertyService {
   rpc ListPropertyFeatures(ListPropertyFeaturesRequest) returns (ListPropertyFeaturesResponse) {
     option (google.api.http) = {
       get: "/v1/properties/{property_id}/features"
+    };
+  }
+  rpc AddPropertyImage(AddPropertyImageRequest) returns (ListPropertyImagesResponse) {
+    option (google.api.http) = {
+      post: "/v1/properties/{property_id}/images"
+      body: "*"
+    };
+  }
+  rpc RemovePropertyImage(RemovePropertyImageRequest) returns (DeletePropertyByIDResponse) {
+    option (google.api.http) = {
+      delete: "/v1/properties/{property_id}/images/{image_id}"
+    };
+  }
+  rpc ListPropertyImages(ListPropertyImagesRequest) returns (ListPropertyImagesResponse) {
+    option (google.api.http) = {
+      get: "/v1/properties/{property_id}/images"
     };
   }
 }

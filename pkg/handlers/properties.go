@@ -43,6 +43,8 @@ func (h *PropertiesHandler) CreateProperty(ctx context.Context, req *connect.Req
 		Title:       msg.GetTitle(),
 		Description: msg.GetDescription(),
 		SizeSqM:     msg.GetSizeSqM(),
+		Bedrooms:    msg.GetBedrooms(),
+		Bathrooms:   msg.GetBathrooms(),
 		Price:       priceFloat,
 		OwnerID:     ownerUUID,
 	}
@@ -52,7 +54,7 @@ func (h *PropertiesHandler) CreateProperty(ctx context.Context, req *connect.Req
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 
-	return connect.NewResponse(h.mapToProto(createdProperty)), nil
+	return connect.NewResponse(h.mapToProto(createdProperty, "")), nil
 }
 
 func (h *PropertiesHandler) GetPropertyByID(ctx context.Context, req *connect.Request[pb.GetPropertyByIDRequest]) (*connect.Response[pb.Property], error) {
@@ -71,7 +73,23 @@ func (h *PropertiesHandler) GetPropertyByID(ctx context.Context, req *connect.Re
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 
-	return connect.NewResponse(h.mapToProto(property)), nil
+	images, err := h.propertiesService.ListPropertyImages(propertyUUID)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, err)
+	}
+
+	mainImageURL := ""
+	for _, img := range images {
+		if img.IsMain {
+			mainImageURL = img.URL
+			break
+		}
+	}
+
+	protoProperty := h.mapToProto(property, mainImageURL)
+	protoProperty.Images = h.mapImagesToProto(images)
+
+	return connect.NewResponse(protoProperty), nil
 }
 
 func (h *PropertiesHandler) GetPropertyList(ctx context.Context, req *connect.Request[pb.GetPropertyListRequest]) (*connect.Response[pb.GetPropertyListResponse], error) {
@@ -97,9 +115,19 @@ func (h *PropertiesHandler) GetPropertyList(ctx context.Context, req *connect.Re
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 
+	propertyIDs := make([]uuid.UUID, len(properties))
+	for i, p := range properties {
+		propertyIDs[i] = p.ID
+	}
+
+	mainImageURLs, err := h.propertiesService.GetMainImageURLs(propertyIDs)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, err)
+	}
+
 	protoProperties := make([]*pb.Property, len(properties))
 	for i, p := range properties {
-		protoProperties[i] = h.mapToProto(&p)
+		protoProperties[i] = h.mapToProto(&p, mainImageURLs[p.ID])
 	}
 
 	nextCursor := ""
@@ -132,6 +160,8 @@ func (h *PropertiesHandler) UpdatePropertyByID(ctx context.Context, req *connect
 		Title:       msg.GetTitle(),
 		SizeSqM:     msg.GetSizeSqM(),
 		Description: msg.GetDescription(),
+		Bedrooms:    msg.GetBedrooms(),
+		Bathrooms:   msg.GetBathrooms(),
 		Price:       priceFloat,
 	})
 	if err != nil {
@@ -141,7 +171,12 @@ func (h *PropertiesHandler) UpdatePropertyByID(ctx context.Context, req *connect
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 
-	return connect.NewResponse(h.mapToProto(updatedProperty)), nil
+	mainImageURLs, err := h.propertiesService.GetMainImageURLs([]uuid.UUID{updatedProperty.ID})
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, err)
+	}
+
+	return connect.NewResponse(h.mapToProto(updatedProperty, mainImageURLs[updatedProperty.ID])), nil
 }
 
 func (h *PropertiesHandler) DeletePropertyByID(ctx context.Context, req *connect.Request[pb.DeletePropertyByIDRequest]) (*connect.Response[pb.DeletePropertyByIDResponse], error) {
@@ -226,6 +261,89 @@ func (h *PropertiesHandler) ListPropertyFeatures(ctx context.Context, req *conne
 	}), nil
 }
 
+func (h *PropertiesHandler) AddPropertyImage(ctx context.Context, req *connect.Request[pb.AddPropertyImageRequest]) (*connect.Response[pb.ListPropertyImagesResponse], error) {
+	msg := req.Msg
+
+	propertyUUID, err := uuid.Parse(msg.GetPropertyId())
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("invalid property ID: %w", err))
+	}
+
+	images, err := h.propertiesService.AddPropertyImage(propertyUUID, msg.GetUrl(), msg.GetIsMain(), msg.GetPosition())
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("property not found"))
+		}
+		if errors.Is(err, services.ErrMaxPropertyImages) {
+			return nil, connect.NewError(connect.CodeFailedPrecondition, err)
+		}
+		return nil, connect.NewError(connect.CodeInternal, err)
+	}
+
+	return connect.NewResponse(&pb.ListPropertyImagesResponse{
+		Images: h.mapImagesToProto(images),
+	}), nil
+}
+
+func (h *PropertiesHandler) RemovePropertyImage(ctx context.Context, req *connect.Request[pb.RemovePropertyImageRequest]) (*connect.Response[pb.DeletePropertyByIDResponse], error) {
+	msg := req.Msg
+
+	propertyUUID, err := uuid.Parse(msg.GetPropertyId())
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("invalid property ID: %w", err))
+	}
+
+	imageUUID, err := uuid.Parse(msg.GetImageId())
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("invalid image ID: %w", err))
+	}
+
+	if err := h.propertiesService.RemovePropertyImage(propertyUUID, imageUUID); err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("property image not found"))
+		}
+		return nil, connect.NewError(connect.CodeInternal, err)
+	}
+
+	return connect.NewResponse(&pb.DeletePropertyByIDResponse{
+		Success: true,
+		Message: "image has been removed from property",
+	}), nil
+}
+
+func (h *PropertiesHandler) ListPropertyImages(ctx context.Context, req *connect.Request[pb.ListPropertyImagesRequest]) (*connect.Response[pb.ListPropertyImagesResponse], error) {
+	msg := req.Msg
+
+	propertyUUID, err := uuid.Parse(msg.GetPropertyId())
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("invalid property ID: %w", err))
+	}
+
+	images, err := h.propertiesService.ListPropertyImages(propertyUUID)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, err)
+	}
+
+	return connect.NewResponse(&pb.ListPropertyImagesResponse{
+		Images: h.mapImagesToProto(images),
+	}), nil
+}
+
+func (h *PropertiesHandler) mapImagesToProto(dbImages []models.PropertyImage) []*pb.PropertyImage {
+	protoImages := make([]*pb.PropertyImage, len(dbImages))
+	for i, img := range dbImages {
+		protoImages[i] = &pb.PropertyImage{
+			Id:         img.ID.String(),
+			PropertyId: img.PropertyID.String(),
+			Url:        img.URL,
+			IsMain:     img.IsMain,
+			Position:   img.Position,
+		}
+	}
+
+	return protoImages
+}
+
 func (h *PropertiesHandler) mapFeaturesToProto(dbFeatures []models.Feature) []*featurev1.Feature {
 	protoFeatures := make([]*featurev1.Feature, len(dbFeatures))
 	for i, f := range dbFeatures {
@@ -238,13 +356,16 @@ func (h *PropertiesHandler) mapFeaturesToProto(dbFeatures []models.Feature) []*f
 	return protoFeatures
 }
 
-func (h *PropertiesHandler) mapToProto(dbProp *models.Property) *pb.Property {
+func (h *PropertiesHandler) mapToProto(dbProp *models.Property, mainImageURL string) *pb.Property {
 	return &pb.Property{
-		Id:          dbProp.ID.String(),
-		Title:       dbProp.Title,
-		SizeSqM:     dbProp.SizeSqM,
-		Description: dbProp.Description,
-		Price:       fmt.Sprintf("%.2f", dbProp.Price),
-		OwnerId:     dbProp.OwnerID.String(),
+		Id:           dbProp.ID.String(),
+		Title:        dbProp.Title,
+		SizeSqM:      dbProp.SizeSqM,
+		Description:  dbProp.Description,
+		Bedrooms:     dbProp.Bedrooms,
+		Bathrooms:    dbProp.Bathrooms,
+		Price:        fmt.Sprintf("%.2f", dbProp.Price),
+		OwnerId:      dbProp.OwnerID.String(),
+		MainImageUrl: mainImageURL,
 	}
 }

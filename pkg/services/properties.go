@@ -11,6 +11,12 @@ import (
 	"github.com/sushiAlii/torogan-be/internal/models"
 )
 
+// ErrMaxPropertyImages is returned when a property already has the maximum
+// of 5 images and another add is attempted.
+var ErrMaxPropertyImages = errors.New("property already has the maximum of 5 images")
+
+const maxPropertyImages = 5
+
 type PropertyService struct {
 	db *gorm.DB
 }
@@ -24,6 +30,8 @@ func (s *PropertyService) CreateProperty(p models.Property) (*models.Property, e
 		Title:       p.Title,
 		SizeSqM:     p.SizeSqM,
 		Description: p.Description,
+		Bedrooms:    p.Bedrooms,
+		Bathrooms:   p.Bathrooms,
 		Price:       p.Price,
 		OwnerID:     p.OwnerID,
 	}
@@ -87,6 +95,8 @@ func (s *PropertyService) UpdatePropertyByID(p models.Property) (*models.Propert
 	dbProperty.Title = p.Title
 	dbProperty.SizeSqM = p.SizeSqM
 	dbProperty.Description = p.Description
+	dbProperty.Bedrooms = p.Bedrooms
+	dbProperty.Bathrooms = p.Bathrooms
 	dbProperty.Price = p.Price
 
 	if err := s.db.Save(&dbProperty).Error; err != nil {
@@ -147,4 +157,131 @@ func (s *PropertyService) ListPropertyFeatures(propertyID uuid.UUID) ([]models.F
 	}
 
 	return features, nil
+}
+
+// AddPropertyImage attaches an image to a property. The first image on a
+// property is always forced to be the main image; setting is_main=true on a
+// later image demotes whichever image currently holds it, keeping the
+// property_images_one_main_idx partial unique index satisfied.
+func (s *PropertyService) AddPropertyImage(propertyID uuid.UUID, url string, isMain bool, position int32) ([]models.PropertyImage, error) {
+	err := s.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.First(&models.Property{}, "id = ?", propertyID).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return err
+			}
+			return fmt.Errorf("failed to fetch property: %w", err)
+		}
+
+		var count int64
+		if err := tx.Model(&models.PropertyImage{}).Where("property_id = ?", propertyID).Count(&count).Error; err != nil {
+			return fmt.Errorf("failed to count property images: %w", err)
+		}
+
+		if count >= maxPropertyImages {
+			return ErrMaxPropertyImages
+		}
+
+		if count == 0 {
+			isMain = true
+		}
+
+		if isMain {
+			err := tx.Model(&models.PropertyImage{}).
+				Where("property_id = ? AND is_main", propertyID).
+				Update("is_main", false).Error
+			if err != nil {
+				return fmt.Errorf("failed to demote current main image: %w", err)
+			}
+		}
+
+		image := models.PropertyImage{
+			PropertyID: propertyID,
+			URL:        url,
+			IsMain:     isMain,
+			Position:   position,
+		}
+		if err := tx.Create(&image).Error; err != nil {
+			return fmt.Errorf("failed to add property image: %w", err)
+		}
+
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return s.ListPropertyImages(propertyID)
+}
+
+// RemovePropertyImage removes an image from a property. If the removed
+// image was the main image and other images remain, the lowest-position
+// survivor is promoted to main.
+func (s *PropertyService) RemovePropertyImage(propertyID, imageID uuid.UUID) error {
+	return s.db.Transaction(func(tx *gorm.DB) error {
+		var image models.PropertyImage
+		if err := tx.First(&image, "id = ? AND property_id = ?", imageID, propertyID).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return err
+			}
+			return fmt.Errorf("failed to fetch property image: %w", err)
+		}
+
+		if err := tx.Delete(&models.PropertyImage{}, "id = ?", imageID).Error; err != nil {
+			return fmt.Errorf("failed to remove property image: %w", err)
+		}
+
+		if !image.IsMain {
+			return nil
+		}
+
+		var survivor models.PropertyImage
+		err := tx.Where("property_id = ?", propertyID).
+			Order("position ASC, created_at ASC").
+			First(&survivor).Error
+		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return nil
+			}
+			return fmt.Errorf("failed to find replacement main image: %w", err)
+		}
+
+		if err := tx.Model(&survivor).Update("is_main", true).Error; err != nil {
+			return fmt.Errorf("failed to promote replacement main image: %w", err)
+		}
+
+		return nil
+	})
+}
+
+func (s *PropertyService) ListPropertyImages(propertyID uuid.UUID) ([]models.PropertyImage, error) {
+	var images []models.PropertyImage
+	err := s.db.Where("property_id = ?", propertyID).
+		Order("position ASC, created_at ASC").
+		Find(&images).Error
+	if err != nil {
+		return nil, fmt.Errorf("failed to list property images: %w", err)
+	}
+
+	return images, nil
+}
+
+// GetMainImageURLs batches the main-image lookup for a page of properties,
+// used by GetPropertyList to avoid an N+1 query per property.
+func (s *PropertyService) GetMainImageURLs(propertyIDs []uuid.UUID) (map[uuid.UUID]string, error) {
+	urls := make(map[uuid.UUID]string, len(propertyIDs))
+	if len(propertyIDs) == 0 {
+		return urls, nil
+	}
+
+	var images []models.PropertyImage
+	err := s.db.Where("property_id IN ? AND is_main", propertyIDs).Find(&images).Error
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch main image urls: %w", err)
+	}
+
+	for _, img := range images {
+		urls[img.PropertyID] = img.URL
+	}
+
+	return urls, nil
 }
