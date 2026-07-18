@@ -1,10 +1,12 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/http"
 
+	"connectrpc.com/connect"
 	"connectrpc.com/vanguard"
 	"github.com/joho/godotenv"
 	"golang.org/x/net/http2"
@@ -14,8 +16,11 @@ import (
 	"github.com/sushiAlii/torogan-be/gen/authv1/authv1connect"
 	"github.com/sushiAlii/torogan-be/gen/featurev1/featurev1connect"
 	"github.com/sushiAlii/torogan-be/gen/propertyv1/propertyv1connect"
+	"github.com/sushiAlii/torogan-be/gen/uploadv1/uploadv1connect"
+	"github.com/sushiAlii/torogan-be/gen/userv1/userv1connect"
 	"github.com/sushiAlii/torogan-be/internal/database"
 	"github.com/sushiAlii/torogan-be/pkg/handlers"
+	"github.com/sushiAlii/torogan-be/pkg/interceptors"
 	"github.com/sushiAlii/torogan-be/pkg/services"
 
 	utils "github.com/sushiAlii/torogan-be/pkg"
@@ -26,6 +31,8 @@ func main() {
 	if err := godotenv.Load(); err != nil {
 		log.Println("No .env file found, using system environment variables")
 	}
+
+	ctx := context.Background()
 
 	database.ConnectDB()
 
@@ -45,28 +52,56 @@ func main() {
 	// Auth Service
 	as := services.NewAuthService(db)
 	ah := handlers.NewAuthHandler(as)
-	authPath, authHandler := authv1connect.NewAuthServiceHandler(ah)
+
+	// authInterceptor reads the Authorization header on every RPC (across
+	// all services below) and, if it carries a valid access token, injects
+	// the caller's user ID/role into the request context. It does not
+	// reject unauthenticated requests itself — handlers that require auth
+	// call interceptors.MustUserID and return CodeUnauthenticated.
+	authInterceptor := interceptors.NewAuthInterceptor(as)
+	opts := connect.WithInterceptors(authInterceptor)
+
+	authPath, authHandler := authv1connect.NewAuthServiceHandler(ah, opts)
 	authVS := vanguard.NewService(authPath, authHandler)
 
 	// Property Service
 	ps := services.NewPropertyService(db)
 	ph := handlers.NewPropertiesHandler(ps)
-	propertyPath, propertyHandler := propertyv1connect.NewPropertyServiceHandler(ph)
+	propertyPath, propertyHandler := propertyv1connect.NewPropertyServiceHandler(ph, opts)
 	propertyVS := vanguard.NewService(propertyPath, propertyHandler)
 
 	// Feature Service
 	fs := services.NewFeatureService(db)
 	fh := handlers.NewFeaturesHandler(fs)
-	featurePath, featureHandler := featurev1connect.NewFeatureServiceHandler(fh)
+	featurePath, featureHandler := featurev1connect.NewFeatureServiceHandler(fh, opts)
 	featureVS := vanguard.NewService(featurePath, featureHandler)
 
 	// Address Service
 	addrs := services.NewAddressService(db)
 	addrh := handlers.NewAddressesHandler(addrs)
-	addressPath, addressHandler := addressv1connect.NewAddressServiceHandler(addrh)
+	addressPath, addressHandler := addressv1connect.NewAddressServiceHandler(addrh, opts)
 	addressVS := vanguard.NewService(addressPath, addressHandler)
 
-	gateway, err := vanguard.NewTranscoder([]*vanguard.Service{authVS, propertyVS, featureVS, addressVS})
+	// User Service
+	us := services.NewUserService(db)
+	uh := handlers.NewUserHandler(us)
+	userPath, userHandler := userv1connect.NewUserServiceHandler(uh, opts)
+	userVS := vanguard.NewService(userPath, userHandler)
+
+	// Upload Service — requires AWS_REGION/S3_BUCKET (and AWS credentials)
+	// to be configured. Skipped (not fatal) when absent, so the rest of the
+	// API stays usable in local dev before the S3 bucket is set up.
+	registeredServices := []*vanguard.Service{authVS, propertyVS, featureVS, addressVS, userVS}
+	uploadSvc, err := services.NewUploadService(ctx)
+	if err != nil {
+		log.Printf("⚠️  Upload service disabled (%v) — photo upload endpoints will not be reachable until AWS_REGION/S3_BUCKET are configured", err)
+	} else {
+		uploadh := handlers.NewUploadHandler(uploadSvc)
+		uploadPath, uploadHandler := uploadv1connect.NewUploadServiceHandler(uploadh, opts)
+		registeredServices = append(registeredServices, vanguard.NewService(uploadPath, uploadHandler))
+	}
+
+	gateway, err := vanguard.NewTranscoder(registeredServices)
 	if err != nil {
 		log.Fatalf("Failed to create vanguard gateway: %v", err)
 	}
