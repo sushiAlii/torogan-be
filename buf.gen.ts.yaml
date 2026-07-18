@@ -1,0 +1,6 @@
+version: v1
+plugins:
+  - plugin: buf.build/bufbuild/es
+    out: ../torogan-fe/lib/gen
+    opt:
+      - target=ts

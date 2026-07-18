@@ -6,7 +6,7 @@ endif
 # Internal Docker network connection URL
 DB_URL=postgres://$(DB_USER):$(DB_PASSWORD)@torogan-postgres:5432/$(DB_NAME)?sslmode=$(DB_SSLMODE)
 
-.PHONY: up down migrate-up migrate-down migrate-create proto-gen reset-db
+.PHONY: up down migrate-up migrate-down migrate-create proto-gen proto-gen-ts reset-db
 
 # --------------------------------------------------------------------
 # Core Infrastructure Controls
@@ -50,7 +50,14 @@ proto-gen:
 	@echo "🛠️ Compiling Protobuf and ConnectRPC architectures via Buf..."
 	@mkdir -p gen
 	@buf generate
+	@$(MAKE) proto-gen-ts
 	@echo "✅ Code generation successfully completed!"
+
+# Generate TypeScript types + Connect clients for the frontend repo
+proto-gen-ts:
+	@echo "🛠️ Compiling TypeScript Protobuf types for torogan-fe..."
+	@buf generate --template buf.gen.ts.yaml --include-imports
+	@echo "✅ TypeScript code generation successfully completed!"
 
 # 🔥 The Hard Reset: Wipes containers, volumes, and completely rebuilds the DB from scratch
 reset-db:
