@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package user.v1;
+
+option go_package = "github.com/sushiAlii/torogan-be/gen/userv1;userv1";
+
+import "google/api/annotations.proto";
+import "auth.proto";
+
+message GetMeRequest {}
+
+message UpdateMeRequest {
+  string name = 1;
+  string phone = 2;
+}
+
+service UserService {
+  // GetMe returns the currently authenticated user.
+  rpc GetMe(GetMeRequest) returns (auth.v1.User) {
+    option (google.api.http) = {
+      get: "/v1/users/me"
+    };
+  }
+  // UpdateMe updates the currently authenticated user's editable profile
+  // fields (name, phone).
+  rpc UpdateMe(UpdateMeRequest) returns (auth.v1.User) {
+    option (google.api.http) = {
+      patch: "/v1/users/me"
+      body: "*"
+    };
+  }
+}
