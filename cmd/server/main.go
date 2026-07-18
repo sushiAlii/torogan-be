@@ -10,6 +10,9 @@ import (
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
 
+	"github.com/sushiAlii/torogan-be/gen/addressv1/addressv1connect"
+	"github.com/sushiAlii/torogan-be/gen/authv1/authv1connect"
+	"github.com/sushiAlii/torogan-be/gen/featurev1/featurev1connect"
 	"github.com/sushiAlii/torogan-be/gen/propertyv1/propertyv1connect"
 	"github.com/sushiAlii/torogan-be/internal/database"
 	"github.com/sushiAlii/torogan-be/pkg/handlers"
@@ -39,16 +42,31 @@ func main() {
 
 	log.Println("Database connection test successful!")
 
+	// Auth Service
+	as := services.NewAuthService(db)
+	ah := handlers.NewAuthHandler(as)
+	authPath, authHandler := authv1connect.NewAuthServiceHandler(ah)
+	authVS := vanguard.NewService(authPath, authHandler)
+
 	// Property Service
 	ps := services.NewPropertyService(db)
 	ph := handlers.NewPropertiesHandler(ps)
+	propertyPath, propertyHandler := propertyv1connect.NewPropertyServiceHandler(ph)
+	propertyVS := vanguard.NewService(propertyPath, propertyHandler)
 
-	path, handler := propertyv1connect.NewPropertyServiceHandler(ph)
+	// Feature Service
+	fs := services.NewFeatureService(db)
+	fh := handlers.NewFeaturesHandler(fs)
+	featurePath, featureHandler := featurev1connect.NewFeatureServiceHandler(fh)
+	featureVS := vanguard.NewService(featurePath, featureHandler)
 
-	// Vanguard Service
-	vs := vanguard.NewService(path, handler)
+	// Address Service
+	addrs := services.NewAddressService(db)
+	addrh := handlers.NewAddressesHandler(addrs)
+	addressPath, addressHandler := addressv1connect.NewAddressServiceHandler(addrh)
+	addressVS := vanguard.NewService(addressPath, addressHandler)
 
-	gateway, err := vanguard.NewTranscoder([]*vanguard.Service{vs})
+	gateway, err := vanguard.NewTranscoder([]*vanguard.Service{authVS, propertyVS, featureVS, addressVS})
 	if err != nil {
 		log.Fatalf("Failed to create vanguard gateway: %v", err)
 	}
