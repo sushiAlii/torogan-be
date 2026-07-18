@@ -11,6 +11,7 @@ import (
 
 	pb "github.com/sushiAlii/torogan-be/gen/addressv1"
 	"github.com/sushiAlii/torogan-be/internal/models"
+	"github.com/sushiAlii/torogan-be/pkg/interceptors"
 	"github.com/sushiAlii/torogan-be/pkg/services"
 )
 
@@ -26,6 +27,10 @@ func NewAddressesHandler(s *services.AddressService) *AddressesHandler {
 
 func (h *AddressesHandler) CreateAddress(ctx context.Context, req *connect.Request[pb.CreateAddressRequest]) (*connect.Response[pb.Address], error) {
 	msg := req.Msg
+
+	if _, err := interceptors.MustUserID(ctx); err != nil {
+		return nil, err
+	}
 
 	propertyUUID, err := uuid.Parse(msg.GetPropertyId())
 	if err != nil {
@@ -91,6 +96,10 @@ func (h *AddressesHandler) GetAddressByPropertyID(ctx context.Context, req *conn
 func (h *AddressesHandler) UpdateAddressByID(ctx context.Context, req *connect.Request[pb.UpdateAddressByIDRequest]) (*connect.Response[pb.Address], error) {
 	msg := req.Msg
 
+	if _, err := interceptors.MustUserID(ctx); err != nil {
+		return nil, err
+	}
+
 	addressUUID, err := uuid.Parse(msg.GetId())
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("invalid address ID: %w", err))
@@ -119,6 +128,10 @@ func (h *AddressesHandler) UpdateAddressByID(ctx context.Context, req *connect.R
 
 func (h *AddressesHandler) DeleteAddressByID(ctx context.Context, req *connect.Request[pb.DeleteAddressByIDRequest]) (*connect.Response[pb.DeleteAddressByIDResponse], error) {
 	msg := req.Msg
+
+	if _, err := interceptors.MustUserID(ctx); err != nil {
+		return nil, err
+	}
 
 	addressUUID, err := uuid.Parse(msg.GetId())
 	if err != nil {
