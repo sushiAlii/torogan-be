@@ -2,6 +2,7 @@ CREATE TABLE
     IF NOT EXISTS properties (
         id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
         title VARCHAR(255),
+        type VARCHAR(50),
         size_sq_m DECIMAL(8,2),
         description TEXT,
         bedrooms INTEGER,

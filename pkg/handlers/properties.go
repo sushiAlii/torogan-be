@@ -13,6 +13,7 @@ import (
 	featurev1 "github.com/sushiAlii/torogan-be/gen/featurev1"
 	pb "github.com/sushiAlii/torogan-be/gen/propertyv1"
 	"github.com/sushiAlii/torogan-be/internal/models"
+	"github.com/sushiAlii/torogan-be/pkg/interceptors"
 	"github.com/sushiAlii/torogan-be/pkg/services"
 )
 
@@ -29,9 +30,14 @@ func NewPropertiesHandler(s *services.PropertyService) *PropertiesHandler {
 func (h *PropertiesHandler) CreateProperty(ctx context.Context, req *connect.Request[pb.CreatePropertyRequest]) (*connect.Response[pb.Property], error) {
 	msg := req.Msg
 
-	ownerUUID, err := uuid.Parse(msg.GetOwnerId())
+	callerID, err := interceptors.MustUserID(ctx)
 	if err != nil {
-		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("invalid owner UUID: %w", err))
+		return nil, err
+	}
+
+	ownerUUID, err := uuid.Parse(callerID)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("invalid caller UUID: %w", err))
 	}
 
 	priceFloat, err := strconv.ParseFloat(msg.GetPrice(), 64)
@@ -39,8 +45,13 @@ func (h *PropertiesHandler) CreateProperty(ctx context.Context, req *connect.Req
 		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("invalid price format: %w", err))
 	}
 
+	if !models.IsValidPropertyType(msg.GetType()) {
+		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("invalid property type: %q", msg.GetType()))
+	}
+
 	newProperty := models.Property{
 		Title:       msg.GetTitle(),
+		Type:        msg.GetType(),
 		Description: msg.GetDescription(),
 		SizeSqM:     msg.GetSizeSqM(),
 		Bedrooms:    msg.GetBedrooms(),
@@ -88,6 +99,18 @@ func (h *PropertiesHandler) GetPropertyByID(ctx context.Context, req *connect.Re
 
 	protoProperty := h.mapToProto(property, mainImageURL)
 	protoProperty.Images = h.mapImagesToProto(images)
+
+	// Owner contact info is only ever included for authenticated callers.
+	if _, authenticated := interceptors.UserIDFromContext(ctx); authenticated {
+		if owner, err := h.propertiesService.GetOwner(property.OwnerID); err == nil {
+			protoProperty.OwnerContact = &pb.OwnerContact{
+				Name:      owner.Name,
+				Email:     owner.Email,
+				Phone:     owner.Phone,
+				AvatarUrl: owner.AvatarURL,
+			}
+		}
+	}
 
 	return connect.NewResponse(protoProperty), nil
 }
@@ -145,6 +168,10 @@ func (h *PropertiesHandler) GetPropertyList(ctx context.Context, req *connect.Re
 func (h *PropertiesHandler) UpdatePropertyByID(ctx context.Context, req *connect.Request[pb.UpdatePropertyByIDRequest]) (*connect.Response[pb.Property], error) {
 	msg := req.Msg
 
+	if _, err := interceptors.MustUserID(ctx); err != nil {
+		return nil, err
+	}
+
 	propertyUUID, err := uuid.Parse(msg.GetId())
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("invalid property ID: %w", err))
@@ -155,9 +182,14 @@ func (h *PropertiesHandler) UpdatePropertyByID(ctx context.Context, req *connect
 		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("invalid price format: %w", err))
 	}
 
+	if !models.IsValidPropertyType(msg.GetType()) {
+		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("invalid property type: %q", msg.GetType()))
+	}
+
 	updatedProperty, err := h.propertiesService.UpdatePropertyByID(models.Property{
 		ID:          propertyUUID,
 		Title:       msg.GetTitle(),
+		Type:        msg.GetType(),
 		SizeSqM:     msg.GetSizeSqM(),
 		Description: msg.GetDescription(),
 		Bedrooms:    msg.GetBedrooms(),
@@ -181,6 +213,10 @@ func (h *PropertiesHandler) UpdatePropertyByID(ctx context.Context, req *connect
 
 func (h *PropertiesHandler) DeletePropertyByID(ctx context.Context, req *connect.Request[pb.DeletePropertyByIDRequest]) (*connect.Response[pb.DeletePropertyByIDResponse], error) {
 	msg := req.Msg
+
+	if _, err := interceptors.MustUserID(ctx); err != nil {
+		return nil, err
+	}
 
 	propertyUUID, err := uuid.Parse(msg.GetId())
 	if err != nil {
@@ -264,6 +300,10 @@ func (h *PropertiesHandler) ListPropertyFeatures(ctx context.Context, req *conne
 func (h *PropertiesHandler) AddPropertyImage(ctx context.Context, req *connect.Request[pb.AddPropertyImageRequest]) (*connect.Response[pb.ListPropertyImagesResponse], error) {
 	msg := req.Msg
 
+	if _, err := interceptors.MustUserID(ctx); err != nil {
+		return nil, err
+	}
+
 	propertyUUID, err := uuid.Parse(msg.GetPropertyId())
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("invalid property ID: %w", err))
@@ -287,6 +327,10 @@ func (h *PropertiesHandler) AddPropertyImage(ctx context.Context, req *connect.R
 
 func (h *PropertiesHandler) RemovePropertyImage(ctx context.Context, req *connect.Request[pb.RemovePropertyImageRequest]) (*connect.Response[pb.DeletePropertyByIDResponse], error) {
 	msg := req.Msg
+
+	if _, err := interceptors.MustUserID(ctx); err != nil {
+		return nil, err
+	}
 
 	propertyUUID, err := uuid.Parse(msg.GetPropertyId())
 	if err != nil {
@@ -360,6 +404,7 @@ func (h *PropertiesHandler) mapToProto(dbProp *models.Property, mainImageURL str
 	return &pb.Property{
 		Id:           dbProp.ID.String(),
 		Title:        dbProp.Title,
+		Type:         dbProp.Type,
 		SizeSqM:      dbProp.SizeSqM,
 		Description:  dbProp.Description,
 		Bedrooms:     dbProp.Bedrooms,

@@ -22,6 +22,8 @@ message Property {
   double bathrooms = 10;
   string main_image_url = 11; // populated on list and detail responses
   repeated PropertyImage images = 12; // populated on GetPropertyByID only
+  string type = 13; // one of: Apartment, Studio, House, Townhouse
+  OwnerContact owner_contact = 14; // populated on GetPropertyByID only, and only for authenticated callers
 }
 
 message PropertyImage {
@@ -32,14 +34,25 @@ message PropertyImage {
   int32 position = 5;
 }
 
+message OwnerContact {
+  string name = 1;
+  string email = 2;
+  string phone = 3;
+  string avatar_url = 4;
+}
+
 message CreatePropertyRequest {
   string title = 1;
   double size_sq_m = 2;
   string description = 3;
   string price = 4;
-  string owner_id = 5;
+  // owner_id is intentionally omitted: the owner is derived from the
+  // authenticated caller (see the auth interceptor), not client input.
+  reserved 5;
+  reserved "owner_id";
   int32 bedrooms = 6;
   double bathrooms = 7;
+  string type = 8; // one of: Apartment, Studio, House, Townhouse
 }
 
 message GetPropertyByIDRequest {
@@ -66,6 +79,7 @@ message UpdatePropertyByIDRequest {
   string price = 5;
   int32 bedrooms = 6;
   double bathrooms = 7;
+  string type = 8; // one of: Apartment, Studio, House, Townhouse
 }
 
 // 6. DELETE ENDPOINT MESSAGES

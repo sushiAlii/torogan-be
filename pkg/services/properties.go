@@ -28,6 +28,7 @@ func NewPropertyService(db *gorm.DB) *PropertyService {
 func (s *PropertyService) CreateProperty(p models.Property) (*models.Property, error) {
 	newProperty := models.Property{
 		Title:       p.Title,
+		Type:        p.Type,
 		SizeSqM:     p.SizeSqM,
 		Description: p.Description,
 		Bedrooms:    p.Bedrooms,
@@ -56,6 +57,20 @@ func (s *PropertyService) GetPropertyByID(id uuid.UUID) (*models.Property, error
 	}
 
 	return &dbProperty, nil
+}
+
+// GetOwner loads the user record for a property's owner, for populating
+// OwnerContact on authenticated GetPropertyByID responses.
+func (s *PropertyService) GetOwner(ownerID uuid.UUID) (*models.User, error) {
+	var owner models.User
+	if err := s.db.First(&owner, "id = ?", ownerID).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, err
+		}
+		return nil, fmt.Errorf("failed to fetch property owner: %w", err)
+	}
+
+	return &owner, nil
 }
 
 func (s *PropertyService) GetPropertyList(search string, limit int, cursorUUID uuid.UUID) ([]models.Property, int64, error) {
@@ -93,6 +108,7 @@ func (s *PropertyService) UpdatePropertyByID(p models.Property) (*models.Propert
 	}
 
 	dbProperty.Title = p.Title
+	dbProperty.Type = p.Type
 	dbProperty.SizeSqM = p.SizeSqM
 	dbProperty.Description = p.Description
 	dbProperty.Bedrooms = p.Bedrooms
@@ -165,7 +181,13 @@ func (s *PropertyService) ListPropertyFeatures(propertyID uuid.UUID) ([]models.F
 // property_images_one_main_idx partial unique index satisfied.
 func (s *PropertyService) AddPropertyImage(propertyID uuid.UUID, url string, isMain bool, position int32) ([]models.PropertyImage, error) {
 	err := s.db.Transaction(func(tx *gorm.DB) error {
-		if err := tx.First(&models.Property{}, "id = ?", propertyID).Error; err != nil {
+		// Lock the parent property row for the duration of the transaction
+		// so concurrent AddPropertyImage/RemovePropertyImage calls for the
+		// same property serialize instead of racing: without this, two
+		// concurrent transactions can both read count=0 before either
+		// commits and both try to insert is_main=true, violating
+		// property_images_one_main_idx.
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).First(&models.Property{}, "id = ?", propertyID).Error; err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				return err
 			}
@@ -218,6 +240,16 @@ func (s *PropertyService) AddPropertyImage(propertyID uuid.UUID, url string, isM
 // survivor is promoted to main.
 func (s *PropertyService) RemovePropertyImage(propertyID, imageID uuid.UUID) error {
 	return s.db.Transaction(func(tx *gorm.DB) error {
+		// See AddPropertyImage: lock the parent property row so this
+		// serializes against concurrent Add/RemovePropertyImage calls
+		// instead of racing on the is_main promotion logic below.
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).First(&models.Property{}, "id = ?", propertyID).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return err
+			}
+			return fmt.Errorf("failed to fetch property: %w", err)
+		}
+
 		var image models.PropertyImage
 		if err := tx.First(&image, "id = ? AND property_id = ?", imageID, propertyID).Error; err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
