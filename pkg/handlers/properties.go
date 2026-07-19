@@ -303,6 +303,73 @@ func (h *PropertiesHandler) GetMyPropertyList(ctx context.Context, req *connect.
 	}), nil
 }
 
+func (h *PropertiesHandler) GetMyDeletedPropertyList(ctx context.Context, req *connect.Request[pb.GetMyDeletedPropertyListRequest]) (*connect.Response[pb.GetMyDeletedPropertyListResponse], error) {
+	callerID, err := interceptors.MustUserID(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	ownerUUID, err := uuid.Parse(callerID)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("invalid caller UUID: %w", err))
+	}
+
+	properties, err := h.propertiesService.GetMyDeletedPropertyList(ownerUUID)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, err)
+	}
+
+	propertyIDs := make([]uuid.UUID, len(properties))
+	for i, p := range properties {
+		propertyIDs[i] = p.ID
+	}
+
+	mainImageURLs, err := h.propertiesService.GetMainImageURLs(propertyIDs)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, err)
+	}
+
+	protoProperties := make([]*pb.Property, len(properties))
+	for i, p := range properties {
+		protoProperties[i] = h.mapToProto(&p, mainImageURLs[p.ID])
+	}
+
+	return connect.NewResponse(&pb.GetMyDeletedPropertyListResponse{
+		Properties: protoProperties,
+	}), nil
+}
+
+func (h *PropertiesHandler) RestoreProperty(ctx context.Context, req *connect.Request[pb.RestorePropertyRequest]) (*connect.Response[pb.Property], error) {
+	msg := req.Msg
+
+	callerID, err := interceptors.MustUserID(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	ownerUUID, err := uuid.Parse(callerID)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("invalid caller UUID: %w", err))
+	}
+
+	propertyUUID, err := uuid.Parse(msg.GetId())
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("invalid property ID: %w", err))
+	}
+
+	restoredProperty, err := h.propertiesService.RestoreProperty(propertyUUID, ownerUUID)
+	if err != nil {
+		return nil, mapOwnershipError(err, propertyUUID.String())
+	}
+
+	mainImageURLs, err := h.propertiesService.GetMainImageURLs([]uuid.UUID{restoredProperty.ID})
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, err)
+	}
+
+	return connect.NewResponse(h.mapToProto(restoredProperty, mainImageURLs[restoredProperty.ID])), nil
+}
+
 func (h *PropertiesHandler) RenewProperty(ctx context.Context, req *connect.Request[pb.RenewPropertyRequest]) (*connect.Response[pb.Property], error) {
 	msg := req.Msg
 
@@ -570,7 +637,7 @@ func (h *PropertiesHandler) mapFeaturesToProto(dbFeatures []models.Feature) []*f
 }
 
 func (h *PropertiesHandler) mapToProto(dbProp *models.Property, mainImageURL string) *pb.Property {
-	return &pb.Property{
+	protoProperty := &pb.Property{
 		Id:           dbProp.ID.String(),
 		Title:        dbProp.Title,
 		Type:         dbProp.Type,
@@ -585,4 +652,10 @@ func (h *PropertiesHandler) mapToProto(dbProp *models.Property, mainImageURL str
 		IsRented:     dbProp.IsRented,
 		Status:       dbProp.Status(),
 	}
+
+	if dbProp.DeletedAt.Valid {
+		protoProperty.DeletedAt = timestamppb.New(dbProp.DeletedAt.Time)
+	}
+
+	return protoProperty
 }

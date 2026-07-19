@@ -27,6 +27,7 @@ message Property {
   google.protobuf.Timestamp expires_at = 15;
   bool is_rented = 16;
   string status = 17; // one of: active, expired, rented — server-computed, read-only
+  google.protobuf.Timestamp deleted_at = 18; // set only for soft-deleted listings
 }
 
 message PropertyImage {
@@ -113,6 +114,16 @@ message MarkPropertyRentedRequest {
 }
 
 message MarkPropertyAvailableRequest {
+  string id = 1;
+}
+
+message GetMyDeletedPropertyListRequest {}
+
+message GetMyDeletedPropertyListResponse {
+  repeated Property properties = 1;
+}
+
+message RestorePropertyRequest {
   string id = 1;
 }
 
@@ -204,6 +215,17 @@ service PropertyService {
   rpc MarkPropertyAvailable(MarkPropertyAvailableRequest) returns (Property) {
     option (google.api.http) = {
       post: "/v1/properties/{id}/unrent"
+      body: "*"
+    };
+  }
+  rpc GetMyDeletedPropertyList(GetMyDeletedPropertyListRequest) returns (GetMyDeletedPropertyListResponse) {
+    option (google.api.http) = {
+      get: "/v1/my-properties/deleted"
+    };
+  }
+  rpc RestoreProperty(RestorePropertyRequest) returns (Property) {
+    option (google.api.http) = {
+      post: "/v1/properties/{id}/restore"
       body: "*"
     };
   }

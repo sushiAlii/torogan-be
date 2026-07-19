@@ -43,7 +43,8 @@ type Property struct {
 	OwnerContact  *OwnerContact          `protobuf:"bytes,14,opt,name=owner_contact,json=ownerContact,proto3" json:"owner_contact,omitempty"`   // populated on GetPropertyByID only, and only for authenticated callers
 	ExpiresAt     *timestamppb.Timestamp `protobuf:"bytes,15,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"`
 	IsRented      bool                   `protobuf:"varint,16,opt,name=is_rented,json=isRented,proto3" json:"is_rented,omitempty"`
-	Status        string                 `protobuf:"bytes,17,opt,name=status,proto3" json:"status,omitempty"` // one of: active, expired, rented — server-computed, read-only
+	Status        string                 `protobuf:"bytes,17,opt,name=status,proto3" json:"status,omitempty"`                        // one of: active, expired, rented — server-computed, read-only
+	DeletedAt     *timestamppb.Timestamp `protobuf:"bytes,18,opt,name=deleted_at,json=deletedAt,proto3" json:"deleted_at,omitempty"` // set only for soft-deleted listings
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -195,6 +196,13 @@ func (x *Property) GetStatus() string {
 		return x.Status
 	}
 	return ""
+}
+
+func (x *Property) GetDeletedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.DeletedAt
+	}
+	return nil
 }
 
 type PropertyImage struct {
@@ -1023,6 +1031,130 @@ func (x *MarkPropertyAvailableRequest) GetId() string {
 	return ""
 }
 
+type GetMyDeletedPropertyListRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetMyDeletedPropertyListRequest) Reset() {
+	*x = GetMyDeletedPropertyListRequest{}
+	mi := &file_property_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetMyDeletedPropertyListRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetMyDeletedPropertyListRequest) ProtoMessage() {}
+
+func (x *GetMyDeletedPropertyListRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_property_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetMyDeletedPropertyListRequest.ProtoReflect.Descriptor instead.
+func (*GetMyDeletedPropertyListRequest) Descriptor() ([]byte, []int) {
+	return file_property_proto_rawDescGZIP(), []int{15}
+}
+
+type GetMyDeletedPropertyListResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Properties    []*Property            `protobuf:"bytes,1,rep,name=properties,proto3" json:"properties,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetMyDeletedPropertyListResponse) Reset() {
+	*x = GetMyDeletedPropertyListResponse{}
+	mi := &file_property_proto_msgTypes[16]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetMyDeletedPropertyListResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetMyDeletedPropertyListResponse) ProtoMessage() {}
+
+func (x *GetMyDeletedPropertyListResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_property_proto_msgTypes[16]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetMyDeletedPropertyListResponse.ProtoReflect.Descriptor instead.
+func (*GetMyDeletedPropertyListResponse) Descriptor() ([]byte, []int) {
+	return file_property_proto_rawDescGZIP(), []int{16}
+}
+
+func (x *GetMyDeletedPropertyListResponse) GetProperties() []*Property {
+	if x != nil {
+		return x.Properties
+	}
+	return nil
+}
+
+type RestorePropertyRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RestorePropertyRequest) Reset() {
+	*x = RestorePropertyRequest{}
+	mi := &file_property_proto_msgTypes[17]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RestorePropertyRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RestorePropertyRequest) ProtoMessage() {}
+
+func (x *RestorePropertyRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_property_proto_msgTypes[17]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RestorePropertyRequest.ProtoReflect.Descriptor instead.
+func (*RestorePropertyRequest) Descriptor() ([]byte, []int) {
+	return file_property_proto_rawDescGZIP(), []int{17}
+}
+
+func (x *RestorePropertyRequest) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
 // 7. PROPERTY <-> FEATURE SUB-RESOURCE MESSAGES
 type AddPropertyFeatureRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -1034,7 +1166,7 @@ type AddPropertyFeatureRequest struct {
 
 func (x *AddPropertyFeatureRequest) Reset() {
 	*x = AddPropertyFeatureRequest{}
-	mi := &file_property_proto_msgTypes[15]
+	mi := &file_property_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1046,7 +1178,7 @@ func (x *AddPropertyFeatureRequest) String() string {
 func (*AddPropertyFeatureRequest) ProtoMessage() {}
 
 func (x *AddPropertyFeatureRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_property_proto_msgTypes[15]
+	mi := &file_property_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1059,7 +1191,7 @@ func (x *AddPropertyFeatureRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AddPropertyFeatureRequest.ProtoReflect.Descriptor instead.
 func (*AddPropertyFeatureRequest) Descriptor() ([]byte, []int) {
-	return file_property_proto_rawDescGZIP(), []int{15}
+	return file_property_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *AddPropertyFeatureRequest) GetPropertyId() string {
@@ -1086,7 +1218,7 @@ type RemovePropertyFeatureRequest struct {
 
 func (x *RemovePropertyFeatureRequest) Reset() {
 	*x = RemovePropertyFeatureRequest{}
-	mi := &file_property_proto_msgTypes[16]
+	mi := &file_property_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1098,7 +1230,7 @@ func (x *RemovePropertyFeatureRequest) String() string {
 func (*RemovePropertyFeatureRequest) ProtoMessage() {}
 
 func (x *RemovePropertyFeatureRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_property_proto_msgTypes[16]
+	mi := &file_property_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1111,7 +1243,7 @@ func (x *RemovePropertyFeatureRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RemovePropertyFeatureRequest.ProtoReflect.Descriptor instead.
 func (*RemovePropertyFeatureRequest) Descriptor() ([]byte, []int) {
-	return file_property_proto_rawDescGZIP(), []int{16}
+	return file_property_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *RemovePropertyFeatureRequest) GetPropertyId() string {
@@ -1137,7 +1269,7 @@ type ListPropertyFeaturesRequest struct {
 
 func (x *ListPropertyFeaturesRequest) Reset() {
 	*x = ListPropertyFeaturesRequest{}
-	mi := &file_property_proto_msgTypes[17]
+	mi := &file_property_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1149,7 +1281,7 @@ func (x *ListPropertyFeaturesRequest) String() string {
 func (*ListPropertyFeaturesRequest) ProtoMessage() {}
 
 func (x *ListPropertyFeaturesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_property_proto_msgTypes[17]
+	mi := &file_property_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1162,7 +1294,7 @@ func (x *ListPropertyFeaturesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListPropertyFeaturesRequest.ProtoReflect.Descriptor instead.
 func (*ListPropertyFeaturesRequest) Descriptor() ([]byte, []int) {
-	return file_property_proto_rawDescGZIP(), []int{17}
+	return file_property_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *ListPropertyFeaturesRequest) GetPropertyId() string {
@@ -1181,7 +1313,7 @@ type ListPropertyFeaturesResponse struct {
 
 func (x *ListPropertyFeaturesResponse) Reset() {
 	*x = ListPropertyFeaturesResponse{}
-	mi := &file_property_proto_msgTypes[18]
+	mi := &file_property_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1193,7 +1325,7 @@ func (x *ListPropertyFeaturesResponse) String() string {
 func (*ListPropertyFeaturesResponse) ProtoMessage() {}
 
 func (x *ListPropertyFeaturesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_property_proto_msgTypes[18]
+	mi := &file_property_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1206,7 +1338,7 @@ func (x *ListPropertyFeaturesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListPropertyFeaturesResponse.ProtoReflect.Descriptor instead.
 func (*ListPropertyFeaturesResponse) Descriptor() ([]byte, []int) {
-	return file_property_proto_rawDescGZIP(), []int{18}
+	return file_property_proto_rawDescGZIP(), []int{21}
 }
 
 func (x *ListPropertyFeaturesResponse) GetFeatures() []*featurev1.Feature {
@@ -1229,7 +1361,7 @@ type AddPropertyImageRequest struct {
 
 func (x *AddPropertyImageRequest) Reset() {
 	*x = AddPropertyImageRequest{}
-	mi := &file_property_proto_msgTypes[19]
+	mi := &file_property_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1241,7 +1373,7 @@ func (x *AddPropertyImageRequest) String() string {
 func (*AddPropertyImageRequest) ProtoMessage() {}
 
 func (x *AddPropertyImageRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_property_proto_msgTypes[19]
+	mi := &file_property_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1254,7 +1386,7 @@ func (x *AddPropertyImageRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AddPropertyImageRequest.ProtoReflect.Descriptor instead.
 func (*AddPropertyImageRequest) Descriptor() ([]byte, []int) {
-	return file_property_proto_rawDescGZIP(), []int{19}
+	return file_property_proto_rawDescGZIP(), []int{22}
 }
 
 func (x *AddPropertyImageRequest) GetPropertyId() string {
@@ -1295,7 +1427,7 @@ type RemovePropertyImageRequest struct {
 
 func (x *RemovePropertyImageRequest) Reset() {
 	*x = RemovePropertyImageRequest{}
-	mi := &file_property_proto_msgTypes[20]
+	mi := &file_property_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1307,7 +1439,7 @@ func (x *RemovePropertyImageRequest) String() string {
 func (*RemovePropertyImageRequest) ProtoMessage() {}
 
 func (x *RemovePropertyImageRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_property_proto_msgTypes[20]
+	mi := &file_property_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1320,7 +1452,7 @@ func (x *RemovePropertyImageRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RemovePropertyImageRequest.ProtoReflect.Descriptor instead.
 func (*RemovePropertyImageRequest) Descriptor() ([]byte, []int) {
-	return file_property_proto_rawDescGZIP(), []int{20}
+	return file_property_proto_rawDescGZIP(), []int{23}
 }
 
 func (x *RemovePropertyImageRequest) GetPropertyId() string {
@@ -1346,7 +1478,7 @@ type ListPropertyImagesRequest struct {
 
 func (x *ListPropertyImagesRequest) Reset() {
 	*x = ListPropertyImagesRequest{}
-	mi := &file_property_proto_msgTypes[21]
+	mi := &file_property_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1358,7 +1490,7 @@ func (x *ListPropertyImagesRequest) String() string {
 func (*ListPropertyImagesRequest) ProtoMessage() {}
 
 func (x *ListPropertyImagesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_property_proto_msgTypes[21]
+	mi := &file_property_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1371,7 +1503,7 @@ func (x *ListPropertyImagesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListPropertyImagesRequest.ProtoReflect.Descriptor instead.
 func (*ListPropertyImagesRequest) Descriptor() ([]byte, []int) {
-	return file_property_proto_rawDescGZIP(), []int{21}
+	return file_property_proto_rawDescGZIP(), []int{24}
 }
 
 func (x *ListPropertyImagesRequest) GetPropertyId() string {
@@ -1390,7 +1522,7 @@ type ListPropertyImagesResponse struct {
 
 func (x *ListPropertyImagesResponse) Reset() {
 	*x = ListPropertyImagesResponse{}
-	mi := &file_property_proto_msgTypes[22]
+	mi := &file_property_proto_msgTypes[25]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1402,7 +1534,7 @@ func (x *ListPropertyImagesResponse) String() string {
 func (*ListPropertyImagesResponse) ProtoMessage() {}
 
 func (x *ListPropertyImagesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_property_proto_msgTypes[22]
+	mi := &file_property_proto_msgTypes[25]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1415,7 +1547,7 @@ func (x *ListPropertyImagesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListPropertyImagesResponse.ProtoReflect.Descriptor instead.
 func (*ListPropertyImagesResponse) Descriptor() ([]byte, []int) {
-	return file_property_proto_rawDescGZIP(), []int{22}
+	return file_property_proto_rawDescGZIP(), []int{25}
 }
 
 func (x *ListPropertyImagesResponse) GetImages() []*PropertyImage {
@@ -1429,7 +1561,7 @@ var File_property_proto protoreflect.FileDescriptor
 
 const file_property_proto_rawDesc = "" +
 	"\n" +
-	"\x0eproperty.proto\x12\vproperty.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1cgoogle/api/annotations.proto\x1a\rfeature.proto\"\xed\x04\n" +
+	"\x0eproperty.proto\x12\vproperty.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1cgoogle/api/annotations.proto\x1a\rfeature.proto\"\xa8\x05\n" +
 	"\bProperty\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12\x1a\n" +
@@ -1451,7 +1583,9 @@ const file_property_proto_rawDesc = "" +
 	"\n" +
 	"expires_at\x18\x0f \x01(\v2\x1a.google.protobuf.TimestampR\texpiresAt\x12\x1b\n" +
 	"\tis_rented\x18\x10 \x01(\bR\bisRented\x12\x16\n" +
-	"\x06status\x18\x11 \x01(\tR\x06status\"\x87\x01\n" +
+	"\x06status\x18\x11 \x01(\tR\x06status\x129\n" +
+	"\n" +
+	"deleted_at\x18\x12 \x01(\v2\x1a.google.protobuf.TimestampR\tdeletedAt\"\x87\x01\n" +
 	"\rPropertyImage\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1f\n" +
 	"\vproperty_id\x18\x02 \x01(\tR\n" +
@@ -1513,6 +1647,13 @@ const file_property_proto_rawDesc = "" +
 	"\x19MarkPropertyRentedRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\".\n" +
 	"\x1cMarkPropertyAvailableRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\"!\n" +
+	"\x1fGetMyDeletedPropertyListRequest\"Y\n" +
+	" GetMyDeletedPropertyListResponse\x125\n" +
+	"\n" +
+	"properties\x18\x01 \x03(\v2\x15.property.v1.PropertyR\n" +
+	"properties\"(\n" +
+	"\x16RestorePropertyRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\"[\n" +
 	"\x19AddPropertyFeatureRequest\x12\x1f\n" +
 	"\vproperty_id\x18\x01 \x01(\tR\n" +
@@ -1543,7 +1684,7 @@ const file_property_proto_rawDesc = "" +
 	"\vproperty_id\x18\x01 \x01(\tR\n" +
 	"propertyId\"P\n" +
 	"\x1aListPropertyImagesResponse\x122\n" +
-	"\x06images\x18\x01 \x03(\v2\x1a.property.v1.PropertyImageR\x06images2\xf0\x0f\n" +
+	"\x06images\x18\x01 \x03(\v2\x1a.property.v1.PropertyImageR\x06images2\x84\x12\n" +
 	"\x0fPropertyService\x12f\n" +
 	"\x0eCreateProperty\x12\".property.v1.CreatePropertyRequest\x1a\x15.property.v1.Property\"\x19\x82\xd3\xe4\x93\x02\x13:\x01*\"\x0e/v1/properties\x12j\n" +
 	"\x0fGetPropertyByID\x12#.property.v1.GetPropertyByIDRequest\x1a\x15.property.v1.Property\"\x1b\x82\xd3\xe4\x93\x02\x15\x12\x13/v1/properties/{id}\x12t\n" +
@@ -1553,7 +1694,9 @@ const file_property_proto_rawDesc = "" +
 	"\x11GetMyPropertyList\x12%.property.v1.GetMyPropertyListRequest\x1a&.property.v1.GetMyPropertyListResponse\"\x19\x82\xd3\xe4\x93\x02\x13\x12\x11/v1/my-properties\x12o\n" +
 	"\rRenewProperty\x12!.property.v1.RenewPropertyRequest\x1a\x15.property.v1.Property\"$\x82\xd3\xe4\x93\x02\x1e:\x01*\"\x19/v1/properties/{id}/renew\x12x\n" +
 	"\x12MarkPropertyRented\x12&.property.v1.MarkPropertyRentedRequest\x1a\x15.property.v1.Property\"#\x82\xd3\xe4\x93\x02\x1d:\x01*\"\x18/v1/properties/{id}/rent\x12\x80\x01\n" +
-	"\x15MarkPropertyAvailable\x12).property.v1.MarkPropertyAvailableRequest\x1a\x15.property.v1.Property\"%\x82\xd3\xe4\x93\x02\x1f:\x01*\"\x1a/v1/properties/{id}/unrent\x12\x99\x01\n" +
+	"\x15MarkPropertyAvailable\x12).property.v1.MarkPropertyAvailableRequest\x1a\x15.property.v1.Property\"%\x82\xd3\xe4\x93\x02\x1f:\x01*\"\x1a/v1/properties/{id}/unrent\x12\x9a\x01\n" +
+	"\x18GetMyDeletedPropertyList\x12,.property.v1.GetMyDeletedPropertyListRequest\x1a-.property.v1.GetMyDeletedPropertyListResponse\"!\x82\xd3\xe4\x93\x02\x1b\x12\x19/v1/my-properties/deleted\x12u\n" +
+	"\x0fRestoreProperty\x12#.property.v1.RestorePropertyRequest\x1a\x15.property.v1.Property\"&\x82\xd3\xe4\x93\x02 :\x01*\"\x1b/v1/properties/{id}/restore\x12\x99\x01\n" +
 	"\x12AddPropertyFeature\x12&.property.v1.AddPropertyFeatureRequest\x1a).property.v1.ListPropertyFeaturesResponse\"0\x82\xd3\xe4\x93\x02*:\x01*\"%/v1/properties/{property_id}/features\x12\xa7\x01\n" +
 	"\x15RemovePropertyFeature\x12).property.v1.RemovePropertyFeatureRequest\x1a'.property.v1.DeletePropertyByIDResponse\":\x82\xd3\xe4\x93\x024*2/v1/properties/{property_id}/features/{feature_id}\x12\x9a\x01\n" +
 	"\x14ListPropertyFeatures\x12(.property.v1.ListPropertyFeaturesRequest\x1a).property.v1.ListPropertyFeaturesResponse\"-\x82\xd3\xe4\x93\x02'\x12%/v1/properties/{property_id}/features\x12\x91\x01\n" +
@@ -1573,79 +1716,88 @@ func file_property_proto_rawDescGZIP() []byte {
 	return file_property_proto_rawDescData
 }
 
-var file_property_proto_msgTypes = make([]protoimpl.MessageInfo, 23)
+var file_property_proto_msgTypes = make([]protoimpl.MessageInfo, 26)
 var file_property_proto_goTypes = []any{
-	(*Property)(nil),                     // 0: property.v1.Property
-	(*PropertyImage)(nil),                // 1: property.v1.PropertyImage
-	(*OwnerContact)(nil),                 // 2: property.v1.OwnerContact
-	(*CreatePropertyRequest)(nil),        // 3: property.v1.CreatePropertyRequest
-	(*GetPropertyByIDRequest)(nil),       // 4: property.v1.GetPropertyByIDRequest
-	(*GetPropertyListRequest)(nil),       // 5: property.v1.GetPropertyListRequest
-	(*GetPropertyListResponse)(nil),      // 6: property.v1.GetPropertyListResponse
-	(*UpdatePropertyByIDRequest)(nil),    // 7: property.v1.UpdatePropertyByIDRequest
-	(*DeletePropertyByIDRequest)(nil),    // 8: property.v1.DeletePropertyByIDRequest
-	(*DeletePropertyByIDResponse)(nil),   // 9: property.v1.DeletePropertyByIDResponse
-	(*GetMyPropertyListRequest)(nil),     // 10: property.v1.GetMyPropertyListRequest
-	(*GetMyPropertyListResponse)(nil),    // 11: property.v1.GetMyPropertyListResponse
-	(*RenewPropertyRequest)(nil),         // 12: property.v1.RenewPropertyRequest
-	(*MarkPropertyRentedRequest)(nil),    // 13: property.v1.MarkPropertyRentedRequest
-	(*MarkPropertyAvailableRequest)(nil), // 14: property.v1.MarkPropertyAvailableRequest
-	(*AddPropertyFeatureRequest)(nil),    // 15: property.v1.AddPropertyFeatureRequest
-	(*RemovePropertyFeatureRequest)(nil), // 16: property.v1.RemovePropertyFeatureRequest
-	(*ListPropertyFeaturesRequest)(nil),  // 17: property.v1.ListPropertyFeaturesRequest
-	(*ListPropertyFeaturesResponse)(nil), // 18: property.v1.ListPropertyFeaturesResponse
-	(*AddPropertyImageRequest)(nil),      // 19: property.v1.AddPropertyImageRequest
-	(*RemovePropertyImageRequest)(nil),   // 20: property.v1.RemovePropertyImageRequest
-	(*ListPropertyImagesRequest)(nil),    // 21: property.v1.ListPropertyImagesRequest
-	(*ListPropertyImagesResponse)(nil),   // 22: property.v1.ListPropertyImagesResponse
-	(*timestamppb.Timestamp)(nil),        // 23: google.protobuf.Timestamp
-	(*featurev1.Feature)(nil),            // 24: feature.v1.Feature
+	(*Property)(nil),                         // 0: property.v1.Property
+	(*PropertyImage)(nil),                    // 1: property.v1.PropertyImage
+	(*OwnerContact)(nil),                     // 2: property.v1.OwnerContact
+	(*CreatePropertyRequest)(nil),            // 3: property.v1.CreatePropertyRequest
+	(*GetPropertyByIDRequest)(nil),           // 4: property.v1.GetPropertyByIDRequest
+	(*GetPropertyListRequest)(nil),           // 5: property.v1.GetPropertyListRequest
+	(*GetPropertyListResponse)(nil),          // 6: property.v1.GetPropertyListResponse
+	(*UpdatePropertyByIDRequest)(nil),        // 7: property.v1.UpdatePropertyByIDRequest
+	(*DeletePropertyByIDRequest)(nil),        // 8: property.v1.DeletePropertyByIDRequest
+	(*DeletePropertyByIDResponse)(nil),       // 9: property.v1.DeletePropertyByIDResponse
+	(*GetMyPropertyListRequest)(nil),         // 10: property.v1.GetMyPropertyListRequest
+	(*GetMyPropertyListResponse)(nil),        // 11: property.v1.GetMyPropertyListResponse
+	(*RenewPropertyRequest)(nil),             // 12: property.v1.RenewPropertyRequest
+	(*MarkPropertyRentedRequest)(nil),        // 13: property.v1.MarkPropertyRentedRequest
+	(*MarkPropertyAvailableRequest)(nil),     // 14: property.v1.MarkPropertyAvailableRequest
+	(*GetMyDeletedPropertyListRequest)(nil),  // 15: property.v1.GetMyDeletedPropertyListRequest
+	(*GetMyDeletedPropertyListResponse)(nil), // 16: property.v1.GetMyDeletedPropertyListResponse
+	(*RestorePropertyRequest)(nil),           // 17: property.v1.RestorePropertyRequest
+	(*AddPropertyFeatureRequest)(nil),        // 18: property.v1.AddPropertyFeatureRequest
+	(*RemovePropertyFeatureRequest)(nil),     // 19: property.v1.RemovePropertyFeatureRequest
+	(*ListPropertyFeaturesRequest)(nil),      // 20: property.v1.ListPropertyFeaturesRequest
+	(*ListPropertyFeaturesResponse)(nil),     // 21: property.v1.ListPropertyFeaturesResponse
+	(*AddPropertyImageRequest)(nil),          // 22: property.v1.AddPropertyImageRequest
+	(*RemovePropertyImageRequest)(nil),       // 23: property.v1.RemovePropertyImageRequest
+	(*ListPropertyImagesRequest)(nil),        // 24: property.v1.ListPropertyImagesRequest
+	(*ListPropertyImagesResponse)(nil),       // 25: property.v1.ListPropertyImagesResponse
+	(*timestamppb.Timestamp)(nil),            // 26: google.protobuf.Timestamp
+	(*featurev1.Feature)(nil),                // 27: feature.v1.Feature
 }
 var file_property_proto_depIdxs = []int32{
-	23, // 0: property.v1.Property.created_at:type_name -> google.protobuf.Timestamp
-	23, // 1: property.v1.Property.updated_at:type_name -> google.protobuf.Timestamp
+	26, // 0: property.v1.Property.created_at:type_name -> google.protobuf.Timestamp
+	26, // 1: property.v1.Property.updated_at:type_name -> google.protobuf.Timestamp
 	1,  // 2: property.v1.Property.images:type_name -> property.v1.PropertyImage
 	2,  // 3: property.v1.Property.owner_contact:type_name -> property.v1.OwnerContact
-	23, // 4: property.v1.Property.expires_at:type_name -> google.protobuf.Timestamp
-	0,  // 5: property.v1.GetPropertyListResponse.properties:type_name -> property.v1.Property
-	0,  // 6: property.v1.GetMyPropertyListResponse.properties:type_name -> property.v1.Property
-	24, // 7: property.v1.ListPropertyFeaturesResponse.features:type_name -> feature.v1.Feature
-	1,  // 8: property.v1.ListPropertyImagesResponse.images:type_name -> property.v1.PropertyImage
-	3,  // 9: property.v1.PropertyService.CreateProperty:input_type -> property.v1.CreatePropertyRequest
-	4,  // 10: property.v1.PropertyService.GetPropertyByID:input_type -> property.v1.GetPropertyByIDRequest
-	5,  // 11: property.v1.PropertyService.GetPropertyList:input_type -> property.v1.GetPropertyListRequest
-	7,  // 12: property.v1.PropertyService.UpdatePropertyByID:input_type -> property.v1.UpdatePropertyByIDRequest
-	8,  // 13: property.v1.PropertyService.DeletePropertyByID:input_type -> property.v1.DeletePropertyByIDRequest
-	10, // 14: property.v1.PropertyService.GetMyPropertyList:input_type -> property.v1.GetMyPropertyListRequest
-	12, // 15: property.v1.PropertyService.RenewProperty:input_type -> property.v1.RenewPropertyRequest
-	13, // 16: property.v1.PropertyService.MarkPropertyRented:input_type -> property.v1.MarkPropertyRentedRequest
-	14, // 17: property.v1.PropertyService.MarkPropertyAvailable:input_type -> property.v1.MarkPropertyAvailableRequest
-	15, // 18: property.v1.PropertyService.AddPropertyFeature:input_type -> property.v1.AddPropertyFeatureRequest
-	16, // 19: property.v1.PropertyService.RemovePropertyFeature:input_type -> property.v1.RemovePropertyFeatureRequest
-	17, // 20: property.v1.PropertyService.ListPropertyFeatures:input_type -> property.v1.ListPropertyFeaturesRequest
-	19, // 21: property.v1.PropertyService.AddPropertyImage:input_type -> property.v1.AddPropertyImageRequest
-	20, // 22: property.v1.PropertyService.RemovePropertyImage:input_type -> property.v1.RemovePropertyImageRequest
-	21, // 23: property.v1.PropertyService.ListPropertyImages:input_type -> property.v1.ListPropertyImagesRequest
-	0,  // 24: property.v1.PropertyService.CreateProperty:output_type -> property.v1.Property
-	0,  // 25: property.v1.PropertyService.GetPropertyByID:output_type -> property.v1.Property
-	6,  // 26: property.v1.PropertyService.GetPropertyList:output_type -> property.v1.GetPropertyListResponse
-	0,  // 27: property.v1.PropertyService.UpdatePropertyByID:output_type -> property.v1.Property
-	9,  // 28: property.v1.PropertyService.DeletePropertyByID:output_type -> property.v1.DeletePropertyByIDResponse
-	11, // 29: property.v1.PropertyService.GetMyPropertyList:output_type -> property.v1.GetMyPropertyListResponse
-	0,  // 30: property.v1.PropertyService.RenewProperty:output_type -> property.v1.Property
-	0,  // 31: property.v1.PropertyService.MarkPropertyRented:output_type -> property.v1.Property
-	0,  // 32: property.v1.PropertyService.MarkPropertyAvailable:output_type -> property.v1.Property
-	18, // 33: property.v1.PropertyService.AddPropertyFeature:output_type -> property.v1.ListPropertyFeaturesResponse
-	9,  // 34: property.v1.PropertyService.RemovePropertyFeature:output_type -> property.v1.DeletePropertyByIDResponse
-	18, // 35: property.v1.PropertyService.ListPropertyFeatures:output_type -> property.v1.ListPropertyFeaturesResponse
-	22, // 36: property.v1.PropertyService.AddPropertyImage:output_type -> property.v1.ListPropertyImagesResponse
-	9,  // 37: property.v1.PropertyService.RemovePropertyImage:output_type -> property.v1.DeletePropertyByIDResponse
-	22, // 38: property.v1.PropertyService.ListPropertyImages:output_type -> property.v1.ListPropertyImagesResponse
-	24, // [24:39] is the sub-list for method output_type
-	9,  // [9:24] is the sub-list for method input_type
-	9,  // [9:9] is the sub-list for extension type_name
-	9,  // [9:9] is the sub-list for extension extendee
-	0,  // [0:9] is the sub-list for field type_name
+	26, // 4: property.v1.Property.expires_at:type_name -> google.protobuf.Timestamp
+	26, // 5: property.v1.Property.deleted_at:type_name -> google.protobuf.Timestamp
+	0,  // 6: property.v1.GetPropertyListResponse.properties:type_name -> property.v1.Property
+	0,  // 7: property.v1.GetMyPropertyListResponse.properties:type_name -> property.v1.Property
+	0,  // 8: property.v1.GetMyDeletedPropertyListResponse.properties:type_name -> property.v1.Property
+	27, // 9: property.v1.ListPropertyFeaturesResponse.features:type_name -> feature.v1.Feature
+	1,  // 10: property.v1.ListPropertyImagesResponse.images:type_name -> property.v1.PropertyImage
+	3,  // 11: property.v1.PropertyService.CreateProperty:input_type -> property.v1.CreatePropertyRequest
+	4,  // 12: property.v1.PropertyService.GetPropertyByID:input_type -> property.v1.GetPropertyByIDRequest
+	5,  // 13: property.v1.PropertyService.GetPropertyList:input_type -> property.v1.GetPropertyListRequest
+	7,  // 14: property.v1.PropertyService.UpdatePropertyByID:input_type -> property.v1.UpdatePropertyByIDRequest
+	8,  // 15: property.v1.PropertyService.DeletePropertyByID:input_type -> property.v1.DeletePropertyByIDRequest
+	10, // 16: property.v1.PropertyService.GetMyPropertyList:input_type -> property.v1.GetMyPropertyListRequest
+	12, // 17: property.v1.PropertyService.RenewProperty:input_type -> property.v1.RenewPropertyRequest
+	13, // 18: property.v1.PropertyService.MarkPropertyRented:input_type -> property.v1.MarkPropertyRentedRequest
+	14, // 19: property.v1.PropertyService.MarkPropertyAvailable:input_type -> property.v1.MarkPropertyAvailableRequest
+	15, // 20: property.v1.PropertyService.GetMyDeletedPropertyList:input_type -> property.v1.GetMyDeletedPropertyListRequest
+	17, // 21: property.v1.PropertyService.RestoreProperty:input_type -> property.v1.RestorePropertyRequest
+	18, // 22: property.v1.PropertyService.AddPropertyFeature:input_type -> property.v1.AddPropertyFeatureRequest
+	19, // 23: property.v1.PropertyService.RemovePropertyFeature:input_type -> property.v1.RemovePropertyFeatureRequest
+	20, // 24: property.v1.PropertyService.ListPropertyFeatures:input_type -> property.v1.ListPropertyFeaturesRequest
+	22, // 25: property.v1.PropertyService.AddPropertyImage:input_type -> property.v1.AddPropertyImageRequest
+	23, // 26: property.v1.PropertyService.RemovePropertyImage:input_type -> property.v1.RemovePropertyImageRequest
+	24, // 27: property.v1.PropertyService.ListPropertyImages:input_type -> property.v1.ListPropertyImagesRequest
+	0,  // 28: property.v1.PropertyService.CreateProperty:output_type -> property.v1.Property
+	0,  // 29: property.v1.PropertyService.GetPropertyByID:output_type -> property.v1.Property
+	6,  // 30: property.v1.PropertyService.GetPropertyList:output_type -> property.v1.GetPropertyListResponse
+	0,  // 31: property.v1.PropertyService.UpdatePropertyByID:output_type -> property.v1.Property
+	9,  // 32: property.v1.PropertyService.DeletePropertyByID:output_type -> property.v1.DeletePropertyByIDResponse
+	11, // 33: property.v1.PropertyService.GetMyPropertyList:output_type -> property.v1.GetMyPropertyListResponse
+	0,  // 34: property.v1.PropertyService.RenewProperty:output_type -> property.v1.Property
+	0,  // 35: property.v1.PropertyService.MarkPropertyRented:output_type -> property.v1.Property
+	0,  // 36: property.v1.PropertyService.MarkPropertyAvailable:output_type -> property.v1.Property
+	16, // 37: property.v1.PropertyService.GetMyDeletedPropertyList:output_type -> property.v1.GetMyDeletedPropertyListResponse
+	0,  // 38: property.v1.PropertyService.RestoreProperty:output_type -> property.v1.Property
+	21, // 39: property.v1.PropertyService.AddPropertyFeature:output_type -> property.v1.ListPropertyFeaturesResponse
+	9,  // 40: property.v1.PropertyService.RemovePropertyFeature:output_type -> property.v1.DeletePropertyByIDResponse
+	21, // 41: property.v1.PropertyService.ListPropertyFeatures:output_type -> property.v1.ListPropertyFeaturesResponse
+	25, // 42: property.v1.PropertyService.AddPropertyImage:output_type -> property.v1.ListPropertyImagesResponse
+	9,  // 43: property.v1.PropertyService.RemovePropertyImage:output_type -> property.v1.DeletePropertyByIDResponse
+	25, // 44: property.v1.PropertyService.ListPropertyImages:output_type -> property.v1.ListPropertyImagesResponse
+	28, // [28:45] is the sub-list for method output_type
+	11, // [11:28] is the sub-list for method input_type
+	11, // [11:11] is the sub-list for extension type_name
+	11, // [11:11] is the sub-list for extension extendee
+	0,  // [0:11] is the sub-list for field type_name
 }
 
 func init() { file_property_proto_init() }
@@ -1659,7 +1811,7 @@ func file_property_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_property_proto_rawDesc), len(file_property_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   23,
+			NumMessages:   26,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

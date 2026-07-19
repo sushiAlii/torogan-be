@@ -192,6 +192,47 @@ func (s *PropertyService) GetMyPropertyList(ownerID uuid.UUID) ([]models.Propert
 	return dbProperties, nil
 }
 
+// GetMyDeletedPropertyList returns ownerID's soft-deleted listings, most
+// recently deleted first. Unscoped() is required — GORM's default scope
+// excludes soft-deleted rows from every query, including this one.
+func (s *PropertyService) GetMyDeletedPropertyList(ownerID uuid.UUID) ([]models.Property, error) {
+	var dbProperties []models.Property
+	err := s.db.Unscoped().
+		Where("owner_id = ? AND deleted_at IS NOT NULL", ownerID).
+		Order("deleted_at DESC").
+		Find(&dbProperties).Error
+	if err != nil {
+		return nil, fmt.Errorf("failed to list deleted properties: %w", err)
+	}
+
+	return dbProperties, nil
+}
+
+// RestoreProperty clears a soft-deleted listing's deleted_at. Both the fetch
+// and the update need Unscoped(): GORM's default scope would otherwise skip
+// the row entirely (fetch) or match zero rows (update, since the implicit
+// "deleted_at IS NULL" scope contradicts the row we're trying to touch).
+func (s *PropertyService) RestoreProperty(id uuid.UUID, ownerID uuid.UUID) (*models.Property, error) {
+	var dbProperty models.Property
+	if err := s.db.Unscoped().First(&dbProperty, "id = ?", id).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, err
+		}
+		return nil, fmt.Errorf("failed to fetch property: %w", err)
+	}
+
+	if err := verifyOwner(dbProperty, ownerID); err != nil {
+		return nil, err
+	}
+
+	if err := s.db.Unscoped().Model(&dbProperty).Update("deleted_at", nil).Error; err != nil {
+		return nil, fmt.Errorf("failed to restore property: %w", err)
+	}
+	dbProperty.DeletedAt = gorm.DeletedAt{}
+
+	return &dbProperty, nil
+}
+
 // RenewProperty extends a listing's expiry to a fresh window starting now.
 // It deliberately leaves IsRented untouched — renewal and rented-status are
 // orthogonal concerns.
