@@ -28,8 +28,14 @@ func NewAddressesHandler(s *services.AddressService) *AddressesHandler {
 func (h *AddressesHandler) CreateAddress(ctx context.Context, req *connect.Request[pb.CreateAddressRequest]) (*connect.Response[pb.Address], error) {
 	msg := req.Msg
 
-	if _, err := interceptors.MustUserID(ctx); err != nil {
+	callerID, err := interceptors.MustUserID(ctx)
+	if err != nil {
 		return nil, err
+	}
+
+	ownerUUID, err := uuid.Parse(callerID)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("invalid caller UUID: %w", err))
 	}
 
 	propertyUUID, err := uuid.Parse(msg.GetPropertyId())
@@ -47,9 +53,9 @@ func (h *AddressesHandler) CreateAddress(ctx context.Context, req *connect.Reque
 		Longitude:       msg.GetLongitude(),
 		GooglePlaceID:   msg.GetGooglePlaceId(),
 		PropertyID:      propertyUUID,
-	})
+	}, ownerUUID)
 	if err != nil {
-		return nil, connect.NewError(connect.CodeInternal, err)
+		return nil, mapOwnershipError(err, propertyUUID.String())
 	}
 
 	return connect.NewResponse(h.mapToProto(createdAddress)), nil
@@ -96,8 +102,14 @@ func (h *AddressesHandler) GetAddressByPropertyID(ctx context.Context, req *conn
 func (h *AddressesHandler) UpdateAddressByID(ctx context.Context, req *connect.Request[pb.UpdateAddressByIDRequest]) (*connect.Response[pb.Address], error) {
 	msg := req.Msg
 
-	if _, err := interceptors.MustUserID(ctx); err != nil {
+	callerID, err := interceptors.MustUserID(ctx)
+	if err != nil {
 		return nil, err
+	}
+
+	ownerUUID, err := uuid.Parse(callerID)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("invalid caller UUID: %w", err))
 	}
 
 	addressUUID, err := uuid.Parse(msg.GetId())
@@ -115,12 +127,9 @@ func (h *AddressesHandler) UpdateAddressByID(ctx context.Context, req *connect.R
 		Latitude:        msg.GetLatitude(),
 		Longitude:       msg.GetLongitude(),
 		GooglePlaceID:   msg.GetGooglePlaceId(),
-	})
+	}, ownerUUID)
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("address not found"))
-		}
-		return nil, connect.NewError(connect.CodeInternal, err)
+		return nil, mapOwnershipError(err, addressUUID.String())
 	}
 
 	return connect.NewResponse(h.mapToProto(updatedAddress)), nil
@@ -129,8 +138,14 @@ func (h *AddressesHandler) UpdateAddressByID(ctx context.Context, req *connect.R
 func (h *AddressesHandler) DeleteAddressByID(ctx context.Context, req *connect.Request[pb.DeleteAddressByIDRequest]) (*connect.Response[pb.DeleteAddressByIDResponse], error) {
 	msg := req.Msg
 
-	if _, err := interceptors.MustUserID(ctx); err != nil {
+	callerID, err := interceptors.MustUserID(ctx)
+	if err != nil {
 		return nil, err
+	}
+
+	ownerUUID, err := uuid.Parse(callerID)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("invalid caller UUID: %w", err))
 	}
 
 	addressUUID, err := uuid.Parse(msg.GetId())
@@ -138,11 +153,8 @@ func (h *AddressesHandler) DeleteAddressByID(ctx context.Context, req *connect.R
 		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("invalid address ID: %w", err))
 	}
 
-	if err := h.addressesService.DeleteAddressByID(addressUUID); err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("address not found"))
-		}
-		return nil, connect.NewError(connect.CodeInternal, err)
+	if err := h.addressesService.DeleteAddressByID(addressUUID, ownerUUID); err != nil {
+		return nil, mapOwnershipError(err, addressUUID.String())
 	}
 
 	return connect.NewResponse(&pb.DeleteAddressByIDResponse{
