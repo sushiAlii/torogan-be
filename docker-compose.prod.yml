@@ -21,8 +21,8 @@ services:
     image: torogan-be:prod
     container_name: torogan-be
     restart: unless-stopped
-    ports:
-      - "8080:8080"
+    expose:
+      - "8080"
     depends_on:
       postgres:
         condition: service_healthy
@@ -34,8 +34,28 @@ services:
     networks:
       - torogan-network
 
+  caddy:
+    image: caddy:2-alpine
+    container_name: torogan-caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - backend
+    networks:
+      - torogan-network
+
 volumes:
   postgres_data:
+    driver: local
+  caddy_data:
+    driver: local
+  caddy_config:
     driver: local
 
 networks:

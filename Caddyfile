@@ -1,0 +1,7 @@
+api.torogan.com {
+	reverse_proxy backend:8080 {
+		transport http {
+			versions h2c 2
+		}
+	}
+}

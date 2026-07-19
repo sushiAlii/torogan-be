@@ -5,12 +5,12 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
 
 	"connectrpc.com/connect"
 	"connectrpc.com/vanguard"
 	"github.com/joho/godotenv"
-	"golang.org/x/net/http2"
-	"golang.org/x/net/http2/h2c" //nolint:staticcheck // SA1019: h2c.NewHandler deprecated in favor of http.Server.Protocols; deferred, not part of this change
+	"github.com/rs/cors"
 
 	"github.com/sushiAlii/torogan-be/gen/addressv1/addressv1connect"
 	"github.com/sushiAlii/torogan-be/gen/authv1/authv1connect"
@@ -109,16 +109,44 @@ func main() {
 	mux := http.NewServeMux()
 	mux.Handle("/", gateway)
 
+	// CORS_ALLOWED_ORIGINS is a comma-separated list (e.g.
+	// "https://torogan.com,https://www.torogan.com"). Credentialed
+	// requests (the refresh-token cookie) require echoing back the exact
+	// matched origin rather than "*", which rs/cors handles for us.
+	rawOrigins := utils.GetEnv("CORS_ALLOWED_ORIGINS", "")
+	var allowedOrigins []string
+	for _, o := range strings.Split(rawOrigins, ",") {
+		if o = strings.TrimSpace(o); o != "" {
+			allowedOrigins = append(allowedOrigins, o)
+		}
+	}
+
+	corsMiddleware := cors.New(cors.Options{
+		AllowedOrigins:   allowedOrigins,
+		AllowedMethods:   []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
+		AllowedHeaders:   []string{"*"},
+		AllowCredentials: true,
+		MaxAge:           3600,
+	})
+
 	port := utils.GetEnv("PORT", "8080")
 	serverAddr := fmt.Sprintf(":%s", port)
 	log.Printf("🚀 Torogan API engine online and listening on port %s", port)
 
-	err = http.ListenAndServe(
-		serverAddr,
-		h2c.NewHandler(mux, &http2.Server{}), //nolint:staticcheck // SA1019: see import comment above
-	)
+	// Native unencrypted-HTTP/2 support (Go 1.24+) replaces the old
+	// golang.org/x/net/http2/h2c.NewHandler wrapper; HTTP1 stays enabled
+	// alongside it so plain REST/JSON clients keep working.
+	protocols := new(http.Protocols)
+	protocols.SetHTTP1(true)
+	protocols.SetUnencryptedHTTP2(true)
 
-	if err != nil {
+	server := &http.Server{
+		Addr:      serverAddr,
+		Handler:   corsMiddleware.Handler(mux),
+		Protocols: protocols,
+	}
+
+	if err := server.ListenAndServe(); err != nil {
 		log.Fatalf("Failed to start server: %v", err)
 	}
 
