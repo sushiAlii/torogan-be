@@ -1,0 +1,9 @@
+.git
+.github
+tmp
+*.md
+.env
+.env.*
+!.env.example
+docker-compose.yml
+Dockerfile
