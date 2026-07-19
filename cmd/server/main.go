@@ -10,7 +10,7 @@ import (
 	"connectrpc.com/vanguard"
 	"github.com/joho/godotenv"
 	"golang.org/x/net/http2"
-	"golang.org/x/net/http2/h2c"
+	"golang.org/x/net/http2/h2c" //nolint:staticcheck // SA1019: h2c.NewHandler deprecated in favor of http.Server.Protocols; deferred, not part of this change
 
 	"github.com/sushiAlii/torogan-be/gen/addressv1/addressv1connect"
 	"github.com/sushiAlii/torogan-be/gen/authv1/authv1connect"
@@ -115,7 +115,7 @@ func main() {
 
 	err = http.ListenAndServe(
 		serverAddr,
-		h2c.NewHandler(mux, &http2.Server{}),
+		h2c.NewHandler(mux, &http2.Server{}), //nolint:staticcheck // SA1019: see import comment above
 	)
 
 	if err != nil {
