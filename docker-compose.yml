@@ -32,9 +32,12 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    volumes:
+      - .:/app
+      - /app/tmp
     networks:
       - torogan-network
-    
+
 volumes:
   postgres_data:
     driver: local
