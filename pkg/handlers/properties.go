@@ -4,10 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"strconv"
+	"time"
 
 	"connectrpc.com/connect"
 	"github.com/google/uuid"
+	"google.golang.org/protobuf/types/known/timestamppb"
 	"gorm.io/gorm"
 
 	featurev1 "github.com/sushiAlii/torogan-be/gen/featurev1"
@@ -16,6 +19,23 @@ import (
 	"github.com/sushiAlii/torogan-be/pkg/interceptors"
 	"github.com/sushiAlii/torogan-be/pkg/services"
 )
+
+// mapOwnershipError maps a service error from an owner-scoped mutation to a
+// wire error. ErrNotOwner and "doesn't exist" both become CodeNotFound —
+// not CodePermissionDenied — matching every other not-found branch in this
+// handler and avoiding confirming a resource's existence to a caller who
+// doesn't own it. The ErrNotOwner case is still logged server-side with the
+// property ID for debugging.
+func mapOwnershipError(err error, propertyID string) error {
+	if errors.Is(err, services.ErrNotOwner) {
+		log.Printf("property %s: ownership check failed", propertyID)
+		return connect.NewError(connect.CodeNotFound, fmt.Errorf("property not found"))
+	}
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return connect.NewError(connect.CodeNotFound, fmt.Errorf("property not found"))
+	}
+	return connect.NewError(connect.CodeInternal, err)
+}
 
 type PropertiesHandler struct {
 	propertiesService *services.PropertyService
@@ -49,6 +69,10 @@ func (h *PropertiesHandler) CreateProperty(ctx context.Context, req *connect.Req
 		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("invalid property type: %q", msg.GetType()))
 	}
 
+	if !models.IsValidExpirationDays(msg.GetExpirationDays()) {
+		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("invalid expiration_days: %d (must be 7, 15, or 30)", msg.GetExpirationDays()))
+	}
+
 	newProperty := models.Property{
 		Title:       msg.GetTitle(),
 		Type:        msg.GetType(),
@@ -58,6 +82,7 @@ func (h *PropertiesHandler) CreateProperty(ctx context.Context, req *connect.Req
 		Bathrooms:   msg.GetBathrooms(),
 		Price:       priceFloat,
 		OwnerID:     ownerUUID,
+		ExpiresAt:   time.Now().AddDate(0, 0, int(msg.GetExpirationDays())),
 	}
 
 	createdProperty, err := h.propertiesService.CreateProperty(newProperty)
@@ -168,8 +193,14 @@ func (h *PropertiesHandler) GetPropertyList(ctx context.Context, req *connect.Re
 func (h *PropertiesHandler) UpdatePropertyByID(ctx context.Context, req *connect.Request[pb.UpdatePropertyByIDRequest]) (*connect.Response[pb.Property], error) {
 	msg := req.Msg
 
-	if _, err := interceptors.MustUserID(ctx); err != nil {
+	callerID, err := interceptors.MustUserID(ctx)
+	if err != nil {
 		return nil, err
+	}
+
+	ownerUUID, err := uuid.Parse(callerID)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("invalid caller UUID: %w", err))
 	}
 
 	propertyUUID, err := uuid.Parse(msg.GetId())
@@ -195,12 +226,9 @@ func (h *PropertiesHandler) UpdatePropertyByID(ctx context.Context, req *connect
 		Bedrooms:    msg.GetBedrooms(),
 		Bathrooms:   msg.GetBathrooms(),
 		Price:       priceFloat,
-	})
+	}, ownerUUID)
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("property not found"))
-		}
-		return nil, connect.NewError(connect.CodeInternal, err)
+		return nil, mapOwnershipError(err, propertyUUID.String())
 	}
 
 	mainImageURLs, err := h.propertiesService.GetMainImageURLs([]uuid.UUID{updatedProperty.ID})
@@ -214,8 +242,14 @@ func (h *PropertiesHandler) UpdatePropertyByID(ctx context.Context, req *connect
 func (h *PropertiesHandler) DeletePropertyByID(ctx context.Context, req *connect.Request[pb.DeletePropertyByIDRequest]) (*connect.Response[pb.DeletePropertyByIDResponse], error) {
 	msg := req.Msg
 
-	if _, err := interceptors.MustUserID(ctx); err != nil {
+	callerID, err := interceptors.MustUserID(ctx)
+	if err != nil {
 		return nil, err
+	}
+
+	ownerUUID, err := uuid.Parse(callerID)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("invalid caller UUID: %w", err))
 	}
 
 	propertyUUID, err := uuid.Parse(msg.GetId())
@@ -223,11 +257,8 @@ func (h *PropertiesHandler) DeletePropertyByID(ctx context.Context, req *connect
 		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("invalid property ID: %w", err))
 	}
 
-	if err := h.propertiesService.DeletePropertyByID(propertyUUID); err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("property not found"))
-		}
-		return nil, connect.NewError(connect.CodeInternal, err)
+	if err := h.propertiesService.DeletePropertyByID(propertyUUID, ownerUUID); err != nil {
+		return nil, mapOwnershipError(err, propertyUUID.String())
 	}
 
 	return connect.NewResponse(&pb.DeletePropertyByIDResponse{
@@ -236,16 +267,141 @@ func (h *PropertiesHandler) DeletePropertyByID(ctx context.Context, req *connect
 	}), nil
 }
 
+func (h *PropertiesHandler) GetMyPropertyList(ctx context.Context, req *connect.Request[pb.GetMyPropertyListRequest]) (*connect.Response[pb.GetMyPropertyListResponse], error) {
+	callerID, err := interceptors.MustUserID(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	ownerUUID, err := uuid.Parse(callerID)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("invalid caller UUID: %w", err))
+	}
+
+	properties, err := h.propertiesService.GetMyPropertyList(ownerUUID)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, err)
+	}
+
+	propertyIDs := make([]uuid.UUID, len(properties))
+	for i, p := range properties {
+		propertyIDs[i] = p.ID
+	}
+
+	mainImageURLs, err := h.propertiesService.GetMainImageURLs(propertyIDs)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, err)
+	}
+
+	protoProperties := make([]*pb.Property, len(properties))
+	for i, p := range properties {
+		protoProperties[i] = h.mapToProto(&p, mainImageURLs[p.ID])
+	}
+
+	return connect.NewResponse(&pb.GetMyPropertyListResponse{
+		Properties: protoProperties,
+	}), nil
+}
+
+func (h *PropertiesHandler) RenewProperty(ctx context.Context, req *connect.Request[pb.RenewPropertyRequest]) (*connect.Response[pb.Property], error) {
+	msg := req.Msg
+
+	callerID, err := interceptors.MustUserID(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	ownerUUID, err := uuid.Parse(callerID)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("invalid caller UUID: %w", err))
+	}
+
+	propertyUUID, err := uuid.Parse(msg.GetId())
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("invalid property ID: %w", err))
+	}
+
+	if !models.IsValidExpirationDays(msg.GetExpirationDays()) {
+		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("invalid expiration_days: %d (must be 7, 15, or 30)", msg.GetExpirationDays()))
+	}
+
+	renewedProperty, err := h.propertiesService.RenewProperty(propertyUUID, ownerUUID, msg.GetExpirationDays())
+	if err != nil {
+		return nil, mapOwnershipError(err, propertyUUID.String())
+	}
+
+	mainImageURLs, err := h.propertiesService.GetMainImageURLs([]uuid.UUID{renewedProperty.ID})
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, err)
+	}
+
+	return connect.NewResponse(h.mapToProto(renewedProperty, mainImageURLs[renewedProperty.ID])), nil
+}
+
+func (h *PropertiesHandler) MarkPropertyRented(ctx context.Context, req *connect.Request[pb.MarkPropertyRentedRequest]) (*connect.Response[pb.Property], error) {
+	return h.setRented(ctx, req.Msg.GetId(), true)
+}
+
+func (h *PropertiesHandler) MarkPropertyAvailable(ctx context.Context, req *connect.Request[pb.MarkPropertyAvailableRequest]) (*connect.Response[pb.Property], error) {
+	return h.setRented(ctx, req.Msg.GetId(), false)
+}
+
+// setRented backs both MarkPropertyRented and MarkPropertyAvailable — same
+// shape as PropertyService.setRented, just at the handler layer.
+func (h *PropertiesHandler) setRented(ctx context.Context, id string, rented bool) (*connect.Response[pb.Property], error) {
+	callerID, err := interceptors.MustUserID(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	ownerUUID, err := uuid.Parse(callerID)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("invalid caller UUID: %w", err))
+	}
+
+	propertyUUID, err := uuid.Parse(id)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("invalid property ID: %w", err))
+	}
+
+	var updated *models.Property
+	if rented {
+		updated, err = h.propertiesService.MarkPropertyRented(propertyUUID, ownerUUID)
+	} else {
+		updated, err = h.propertiesService.MarkPropertyAvailable(propertyUUID, ownerUUID)
+	}
+	if err != nil {
+		return nil, mapOwnershipError(err, propertyUUID.String())
+	}
+
+	mainImageURLs, err := h.propertiesService.GetMainImageURLs([]uuid.UUID{updated.ID})
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, err)
+	}
+
+	return connect.NewResponse(h.mapToProto(updated, mainImageURLs[updated.ID])), nil
+}
+
 func (h *PropertiesHandler) AddPropertyFeature(ctx context.Context, req *connect.Request[pb.AddPropertyFeatureRequest]) (*connect.Response[pb.ListPropertyFeaturesResponse], error) {
 	msg := req.Msg
+
+	callerID, err := interceptors.MustUserID(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	ownerUUID, err := uuid.Parse(callerID)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("invalid caller UUID: %w", err))
+	}
 
 	propertyUUID, err := uuid.Parse(msg.GetPropertyId())
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("invalid property ID: %w", err))
 	}
 
-	if err := h.propertiesService.AddPropertyFeature(propertyUUID, uint(msg.GetFeatureId())); err != nil {
-		return nil, connect.NewError(connect.CodeInternal, err)
+	if err := h.propertiesService.AddPropertyFeature(propertyUUID, uint(msg.GetFeatureId()), ownerUUID); err != nil {
+		return nil, mapOwnershipError(err, propertyUUID.String())
 	}
 
 	features, err := h.propertiesService.ListPropertyFeatures(propertyUUID)
@@ -261,16 +417,23 @@ func (h *PropertiesHandler) AddPropertyFeature(ctx context.Context, req *connect
 func (h *PropertiesHandler) RemovePropertyFeature(ctx context.Context, req *connect.Request[pb.RemovePropertyFeatureRequest]) (*connect.Response[pb.DeletePropertyByIDResponse], error) {
 	msg := req.Msg
 
+	callerID, err := interceptors.MustUserID(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	ownerUUID, err := uuid.Parse(callerID)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("invalid caller UUID: %w", err))
+	}
+
 	propertyUUID, err := uuid.Parse(msg.GetPropertyId())
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("invalid property ID: %w", err))
 	}
 
-	if err := h.propertiesService.RemovePropertyFeature(propertyUUID, uint(msg.GetFeatureId())); err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("property feature not found"))
-		}
-		return nil, connect.NewError(connect.CodeInternal, err)
+	if err := h.propertiesService.RemovePropertyFeature(propertyUUID, uint(msg.GetFeatureId()), ownerUUID); err != nil {
+		return nil, mapOwnershipError(err, propertyUUID.String())
 	}
 
 	return connect.NewResponse(&pb.DeletePropertyByIDResponse{
@@ -300,8 +463,14 @@ func (h *PropertiesHandler) ListPropertyFeatures(ctx context.Context, req *conne
 func (h *PropertiesHandler) AddPropertyImage(ctx context.Context, req *connect.Request[pb.AddPropertyImageRequest]) (*connect.Response[pb.ListPropertyImagesResponse], error) {
 	msg := req.Msg
 
-	if _, err := interceptors.MustUserID(ctx); err != nil {
+	callerID, err := interceptors.MustUserID(ctx)
+	if err != nil {
 		return nil, err
+	}
+
+	ownerUUID, err := uuid.Parse(callerID)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("invalid caller UUID: %w", err))
 	}
 
 	propertyUUID, err := uuid.Parse(msg.GetPropertyId())
@@ -309,15 +478,12 @@ func (h *PropertiesHandler) AddPropertyImage(ctx context.Context, req *connect.R
 		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("invalid property ID: %w", err))
 	}
 
-	images, err := h.propertiesService.AddPropertyImage(propertyUUID, msg.GetUrl(), msg.GetIsMain(), msg.GetPosition())
+	images, err := h.propertiesService.AddPropertyImage(propertyUUID, msg.GetUrl(), msg.GetIsMain(), msg.GetPosition(), ownerUUID)
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("property not found"))
-		}
 		if errors.Is(err, services.ErrMaxPropertyImages) {
 			return nil, connect.NewError(connect.CodeFailedPrecondition, err)
 		}
-		return nil, connect.NewError(connect.CodeInternal, err)
+		return nil, mapOwnershipError(err, propertyUUID.String())
 	}
 
 	return connect.NewResponse(&pb.ListPropertyImagesResponse{
@@ -328,8 +494,14 @@ func (h *PropertiesHandler) AddPropertyImage(ctx context.Context, req *connect.R
 func (h *PropertiesHandler) RemovePropertyImage(ctx context.Context, req *connect.Request[pb.RemovePropertyImageRequest]) (*connect.Response[pb.DeletePropertyByIDResponse], error) {
 	msg := req.Msg
 
-	if _, err := interceptors.MustUserID(ctx); err != nil {
+	callerID, err := interceptors.MustUserID(ctx)
+	if err != nil {
 		return nil, err
+	}
+
+	ownerUUID, err := uuid.Parse(callerID)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("invalid caller UUID: %w", err))
 	}
 
 	propertyUUID, err := uuid.Parse(msg.GetPropertyId())
@@ -342,11 +514,8 @@ func (h *PropertiesHandler) RemovePropertyImage(ctx context.Context, req *connec
 		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("invalid image ID: %w", err))
 	}
 
-	if err := h.propertiesService.RemovePropertyImage(propertyUUID, imageUUID); err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("property image not found"))
-		}
-		return nil, connect.NewError(connect.CodeInternal, err)
+	if err := h.propertiesService.RemovePropertyImage(propertyUUID, imageUUID, ownerUUID); err != nil {
+		return nil, mapOwnershipError(err, propertyUUID.String())
 	}
 
 	return connect.NewResponse(&pb.DeletePropertyByIDResponse{
@@ -412,5 +581,8 @@ func (h *PropertiesHandler) mapToProto(dbProp *models.Property, mainImageURL str
 		Price:        fmt.Sprintf("%.2f", dbProp.Price),
 		OwnerId:      dbProp.OwnerID.String(),
 		MainImageUrl: mainImageURL,
+		ExpiresAt:    timestamppb.New(dbProp.ExpiresAt),
+		IsRented:     dbProp.IsRented,
+		Status:       dbProp.Status(),
 	}
 }

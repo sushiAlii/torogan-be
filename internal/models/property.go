@@ -17,6 +17,8 @@ type Property struct {
 	Bathrooms   float64   		`gorm:"type:numeric(3,1)"`
 	Price       float64   		`gorm:"type:numeric(12,2)"`
 	OwnerID     uuid.UUID 		`gorm:"type:uuid;column:owner_id"`
+	ExpiresAt   time.Time 		`gorm:"column:expires_at;not null"`
+	IsRented    bool      		`gorm:"column:is_rented;not null;default:false"`
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
 	DeletedAt   gorm.DeletedAt	`gorm:"index"`
@@ -37,6 +39,42 @@ func IsValidPropertyType(t string) bool {
 	default:
 		return false
 	}
+}
+
+// Valid listing durations, in days, a landlord can pick at creation or renewal.
+const (
+	ExpirationDaysShort  int32 = 7
+	ExpirationDaysMedium int32 = 15
+	ExpirationDaysLong   int32 = 30
+)
+
+// IsValidExpirationDays reports whether days is one of the offered listing durations.
+func IsValidExpirationDays(days int32) bool {
+	switch days {
+	case ExpirationDaysShort, ExpirationDaysMedium, ExpirationDaysLong:
+		return true
+	default:
+		return false
+	}
+}
+
+const (
+	PropertyStatusActive  = "active"
+	PropertyStatusExpired = "expired"
+	PropertyStatusRented  = "rented"
+)
+
+// Status derives the listing's display status from IsRented and ExpiresAt.
+// It is intentionally not persisted — storing it would be a second,
+// driftable source of truth alongside those two columns.
+func (p Property) Status() string {
+	if p.IsRented {
+		return PropertyStatusRented
+	}
+	if time.Now().After(p.ExpiresAt) {
+		return PropertyStatusExpired
+	}
+	return PropertyStatusActive
 }
 
 func (Property) TableName() string {

@@ -48,6 +48,18 @@ const (
 	// PropertyServiceDeletePropertyByIDProcedure is the fully-qualified name of the PropertyService's
 	// DeletePropertyByID RPC.
 	PropertyServiceDeletePropertyByIDProcedure = "/property.v1.PropertyService/DeletePropertyByID"
+	// PropertyServiceGetMyPropertyListProcedure is the fully-qualified name of the PropertyService's
+	// GetMyPropertyList RPC.
+	PropertyServiceGetMyPropertyListProcedure = "/property.v1.PropertyService/GetMyPropertyList"
+	// PropertyServiceRenewPropertyProcedure is the fully-qualified name of the PropertyService's
+	// RenewProperty RPC.
+	PropertyServiceRenewPropertyProcedure = "/property.v1.PropertyService/RenewProperty"
+	// PropertyServiceMarkPropertyRentedProcedure is the fully-qualified name of the PropertyService's
+	// MarkPropertyRented RPC.
+	PropertyServiceMarkPropertyRentedProcedure = "/property.v1.PropertyService/MarkPropertyRented"
+	// PropertyServiceMarkPropertyAvailableProcedure is the fully-qualified name of the
+	// PropertyService's MarkPropertyAvailable RPC.
+	PropertyServiceMarkPropertyAvailableProcedure = "/property.v1.PropertyService/MarkPropertyAvailable"
 	// PropertyServiceAddPropertyFeatureProcedure is the fully-qualified name of the PropertyService's
 	// AddPropertyFeature RPC.
 	PropertyServiceAddPropertyFeatureProcedure = "/property.v1.PropertyService/AddPropertyFeature"
@@ -75,6 +87,10 @@ type PropertyServiceClient interface {
 	GetPropertyList(context.Context, *connect.Request[propertyv1.GetPropertyListRequest]) (*connect.Response[propertyv1.GetPropertyListResponse], error)
 	UpdatePropertyByID(context.Context, *connect.Request[propertyv1.UpdatePropertyByIDRequest]) (*connect.Response[propertyv1.Property], error)
 	DeletePropertyByID(context.Context, *connect.Request[propertyv1.DeletePropertyByIDRequest]) (*connect.Response[propertyv1.DeletePropertyByIDResponse], error)
+	GetMyPropertyList(context.Context, *connect.Request[propertyv1.GetMyPropertyListRequest]) (*connect.Response[propertyv1.GetMyPropertyListResponse], error)
+	RenewProperty(context.Context, *connect.Request[propertyv1.RenewPropertyRequest]) (*connect.Response[propertyv1.Property], error)
+	MarkPropertyRented(context.Context, *connect.Request[propertyv1.MarkPropertyRentedRequest]) (*connect.Response[propertyv1.Property], error)
+	MarkPropertyAvailable(context.Context, *connect.Request[propertyv1.MarkPropertyAvailableRequest]) (*connect.Response[propertyv1.Property], error)
 	AddPropertyFeature(context.Context, *connect.Request[propertyv1.AddPropertyFeatureRequest]) (*connect.Response[propertyv1.ListPropertyFeaturesResponse], error)
 	RemovePropertyFeature(context.Context, *connect.Request[propertyv1.RemovePropertyFeatureRequest]) (*connect.Response[propertyv1.DeletePropertyByIDResponse], error)
 	ListPropertyFeatures(context.Context, *connect.Request[propertyv1.ListPropertyFeaturesRequest]) (*connect.Response[propertyv1.ListPropertyFeaturesResponse], error)
@@ -124,6 +140,30 @@ func NewPropertyServiceClient(httpClient connect.HTTPClient, baseURL string, opt
 			connect.WithSchema(propertyServiceMethods.ByName("DeletePropertyByID")),
 			connect.WithClientOptions(opts...),
 		),
+		getMyPropertyList: connect.NewClient[propertyv1.GetMyPropertyListRequest, propertyv1.GetMyPropertyListResponse](
+			httpClient,
+			baseURL+PropertyServiceGetMyPropertyListProcedure,
+			connect.WithSchema(propertyServiceMethods.ByName("GetMyPropertyList")),
+			connect.WithClientOptions(opts...),
+		),
+		renewProperty: connect.NewClient[propertyv1.RenewPropertyRequest, propertyv1.Property](
+			httpClient,
+			baseURL+PropertyServiceRenewPropertyProcedure,
+			connect.WithSchema(propertyServiceMethods.ByName("RenewProperty")),
+			connect.WithClientOptions(opts...),
+		),
+		markPropertyRented: connect.NewClient[propertyv1.MarkPropertyRentedRequest, propertyv1.Property](
+			httpClient,
+			baseURL+PropertyServiceMarkPropertyRentedProcedure,
+			connect.WithSchema(propertyServiceMethods.ByName("MarkPropertyRented")),
+			connect.WithClientOptions(opts...),
+		),
+		markPropertyAvailable: connect.NewClient[propertyv1.MarkPropertyAvailableRequest, propertyv1.Property](
+			httpClient,
+			baseURL+PropertyServiceMarkPropertyAvailableProcedure,
+			connect.WithSchema(propertyServiceMethods.ByName("MarkPropertyAvailable")),
+			connect.WithClientOptions(opts...),
+		),
 		addPropertyFeature: connect.NewClient[propertyv1.AddPropertyFeatureRequest, propertyv1.ListPropertyFeaturesResponse](
 			httpClient,
 			baseURL+PropertyServiceAddPropertyFeatureProcedure,
@@ -170,6 +210,10 @@ type propertyServiceClient struct {
 	getPropertyList       *connect.Client[propertyv1.GetPropertyListRequest, propertyv1.GetPropertyListResponse]
 	updatePropertyByID    *connect.Client[propertyv1.UpdatePropertyByIDRequest, propertyv1.Property]
 	deletePropertyByID    *connect.Client[propertyv1.DeletePropertyByIDRequest, propertyv1.DeletePropertyByIDResponse]
+	getMyPropertyList     *connect.Client[propertyv1.GetMyPropertyListRequest, propertyv1.GetMyPropertyListResponse]
+	renewProperty         *connect.Client[propertyv1.RenewPropertyRequest, propertyv1.Property]
+	markPropertyRented    *connect.Client[propertyv1.MarkPropertyRentedRequest, propertyv1.Property]
+	markPropertyAvailable *connect.Client[propertyv1.MarkPropertyAvailableRequest, propertyv1.Property]
 	addPropertyFeature    *connect.Client[propertyv1.AddPropertyFeatureRequest, propertyv1.ListPropertyFeaturesResponse]
 	removePropertyFeature *connect.Client[propertyv1.RemovePropertyFeatureRequest, propertyv1.DeletePropertyByIDResponse]
 	listPropertyFeatures  *connect.Client[propertyv1.ListPropertyFeaturesRequest, propertyv1.ListPropertyFeaturesResponse]
@@ -201,6 +245,26 @@ func (c *propertyServiceClient) UpdatePropertyByID(ctx context.Context, req *con
 // DeletePropertyByID calls property.v1.PropertyService.DeletePropertyByID.
 func (c *propertyServiceClient) DeletePropertyByID(ctx context.Context, req *connect.Request[propertyv1.DeletePropertyByIDRequest]) (*connect.Response[propertyv1.DeletePropertyByIDResponse], error) {
 	return c.deletePropertyByID.CallUnary(ctx, req)
+}
+
+// GetMyPropertyList calls property.v1.PropertyService.GetMyPropertyList.
+func (c *propertyServiceClient) GetMyPropertyList(ctx context.Context, req *connect.Request[propertyv1.GetMyPropertyListRequest]) (*connect.Response[propertyv1.GetMyPropertyListResponse], error) {
+	return c.getMyPropertyList.CallUnary(ctx, req)
+}
+
+// RenewProperty calls property.v1.PropertyService.RenewProperty.
+func (c *propertyServiceClient) RenewProperty(ctx context.Context, req *connect.Request[propertyv1.RenewPropertyRequest]) (*connect.Response[propertyv1.Property], error) {
+	return c.renewProperty.CallUnary(ctx, req)
+}
+
+// MarkPropertyRented calls property.v1.PropertyService.MarkPropertyRented.
+func (c *propertyServiceClient) MarkPropertyRented(ctx context.Context, req *connect.Request[propertyv1.MarkPropertyRentedRequest]) (*connect.Response[propertyv1.Property], error) {
+	return c.markPropertyRented.CallUnary(ctx, req)
+}
+
+// MarkPropertyAvailable calls property.v1.PropertyService.MarkPropertyAvailable.
+func (c *propertyServiceClient) MarkPropertyAvailable(ctx context.Context, req *connect.Request[propertyv1.MarkPropertyAvailableRequest]) (*connect.Response[propertyv1.Property], error) {
+	return c.markPropertyAvailable.CallUnary(ctx, req)
 }
 
 // AddPropertyFeature calls property.v1.PropertyService.AddPropertyFeature.
@@ -240,6 +304,10 @@ type PropertyServiceHandler interface {
 	GetPropertyList(context.Context, *connect.Request[propertyv1.GetPropertyListRequest]) (*connect.Response[propertyv1.GetPropertyListResponse], error)
 	UpdatePropertyByID(context.Context, *connect.Request[propertyv1.UpdatePropertyByIDRequest]) (*connect.Response[propertyv1.Property], error)
 	DeletePropertyByID(context.Context, *connect.Request[propertyv1.DeletePropertyByIDRequest]) (*connect.Response[propertyv1.DeletePropertyByIDResponse], error)
+	GetMyPropertyList(context.Context, *connect.Request[propertyv1.GetMyPropertyListRequest]) (*connect.Response[propertyv1.GetMyPropertyListResponse], error)
+	RenewProperty(context.Context, *connect.Request[propertyv1.RenewPropertyRequest]) (*connect.Response[propertyv1.Property], error)
+	MarkPropertyRented(context.Context, *connect.Request[propertyv1.MarkPropertyRentedRequest]) (*connect.Response[propertyv1.Property], error)
+	MarkPropertyAvailable(context.Context, *connect.Request[propertyv1.MarkPropertyAvailableRequest]) (*connect.Response[propertyv1.Property], error)
 	AddPropertyFeature(context.Context, *connect.Request[propertyv1.AddPropertyFeatureRequest]) (*connect.Response[propertyv1.ListPropertyFeaturesResponse], error)
 	RemovePropertyFeature(context.Context, *connect.Request[propertyv1.RemovePropertyFeatureRequest]) (*connect.Response[propertyv1.DeletePropertyByIDResponse], error)
 	ListPropertyFeatures(context.Context, *connect.Request[propertyv1.ListPropertyFeaturesRequest]) (*connect.Response[propertyv1.ListPropertyFeaturesResponse], error)
@@ -283,6 +351,30 @@ func NewPropertyServiceHandler(svc PropertyServiceHandler, opts ...connect.Handl
 		PropertyServiceDeletePropertyByIDProcedure,
 		svc.DeletePropertyByID,
 		connect.WithSchema(propertyServiceMethods.ByName("DeletePropertyByID")),
+		connect.WithHandlerOptions(opts...),
+	)
+	propertyServiceGetMyPropertyListHandler := connect.NewUnaryHandler(
+		PropertyServiceGetMyPropertyListProcedure,
+		svc.GetMyPropertyList,
+		connect.WithSchema(propertyServiceMethods.ByName("GetMyPropertyList")),
+		connect.WithHandlerOptions(opts...),
+	)
+	propertyServiceRenewPropertyHandler := connect.NewUnaryHandler(
+		PropertyServiceRenewPropertyProcedure,
+		svc.RenewProperty,
+		connect.WithSchema(propertyServiceMethods.ByName("RenewProperty")),
+		connect.WithHandlerOptions(opts...),
+	)
+	propertyServiceMarkPropertyRentedHandler := connect.NewUnaryHandler(
+		PropertyServiceMarkPropertyRentedProcedure,
+		svc.MarkPropertyRented,
+		connect.WithSchema(propertyServiceMethods.ByName("MarkPropertyRented")),
+		connect.WithHandlerOptions(opts...),
+	)
+	propertyServiceMarkPropertyAvailableHandler := connect.NewUnaryHandler(
+		PropertyServiceMarkPropertyAvailableProcedure,
+		svc.MarkPropertyAvailable,
+		connect.WithSchema(propertyServiceMethods.ByName("MarkPropertyAvailable")),
 		connect.WithHandlerOptions(opts...),
 	)
 	propertyServiceAddPropertyFeatureHandler := connect.NewUnaryHandler(
@@ -333,6 +425,14 @@ func NewPropertyServiceHandler(svc PropertyServiceHandler, opts ...connect.Handl
 			propertyServiceUpdatePropertyByIDHandler.ServeHTTP(w, r)
 		case PropertyServiceDeletePropertyByIDProcedure:
 			propertyServiceDeletePropertyByIDHandler.ServeHTTP(w, r)
+		case PropertyServiceGetMyPropertyListProcedure:
+			propertyServiceGetMyPropertyListHandler.ServeHTTP(w, r)
+		case PropertyServiceRenewPropertyProcedure:
+			propertyServiceRenewPropertyHandler.ServeHTTP(w, r)
+		case PropertyServiceMarkPropertyRentedProcedure:
+			propertyServiceMarkPropertyRentedHandler.ServeHTTP(w, r)
+		case PropertyServiceMarkPropertyAvailableProcedure:
+			propertyServiceMarkPropertyAvailableHandler.ServeHTTP(w, r)
 		case PropertyServiceAddPropertyFeatureProcedure:
 			propertyServiceAddPropertyFeatureHandler.ServeHTTP(w, r)
 		case PropertyServiceRemovePropertyFeatureProcedure:
@@ -372,6 +472,22 @@ func (UnimplementedPropertyServiceHandler) UpdatePropertyByID(context.Context, *
 
 func (UnimplementedPropertyServiceHandler) DeletePropertyByID(context.Context, *connect.Request[propertyv1.DeletePropertyByIDRequest]) (*connect.Response[propertyv1.DeletePropertyByIDResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("property.v1.PropertyService.DeletePropertyByID is not implemented"))
+}
+
+func (UnimplementedPropertyServiceHandler) GetMyPropertyList(context.Context, *connect.Request[propertyv1.GetMyPropertyListRequest]) (*connect.Response[propertyv1.GetMyPropertyListResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("property.v1.PropertyService.GetMyPropertyList is not implemented"))
+}
+
+func (UnimplementedPropertyServiceHandler) RenewProperty(context.Context, *connect.Request[propertyv1.RenewPropertyRequest]) (*connect.Response[propertyv1.Property], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("property.v1.PropertyService.RenewProperty is not implemented"))
+}
+
+func (UnimplementedPropertyServiceHandler) MarkPropertyRented(context.Context, *connect.Request[propertyv1.MarkPropertyRentedRequest]) (*connect.Response[propertyv1.Property], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("property.v1.PropertyService.MarkPropertyRented is not implemented"))
+}
+
+func (UnimplementedPropertyServiceHandler) MarkPropertyAvailable(context.Context, *connect.Request[propertyv1.MarkPropertyAvailableRequest]) (*connect.Response[propertyv1.Property], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("property.v1.PropertyService.MarkPropertyAvailable is not implemented"))
 }
 
 func (UnimplementedPropertyServiceHandler) AddPropertyFeature(context.Context, *connect.Request[propertyv1.AddPropertyFeatureRequest]) (*connect.Response[propertyv1.ListPropertyFeaturesResponse], error) {
