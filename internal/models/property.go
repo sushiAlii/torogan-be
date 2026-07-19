@@ -8,20 +8,20 @@ import (
 )
 
 type Property struct {
-	ID          uuid.UUID 		`gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
-	Title       string    		`gorm:"type:varchar(255)"`
-	Type        string    		`gorm:"type:varchar(50)"`
-	SizeSqM     float64   		`gorm:"type:decimal(8,2);column:size_sq_m"`
-	Description string    		`gorm:"type:text"`
-	Bedrooms    int32     		`gorm:"type:integer"`
-	Bathrooms   float64   		`gorm:"type:numeric(3,1)"`
-	Price       float64   		`gorm:"type:numeric(12,2)"`
-	OwnerID     uuid.UUID 		`gorm:"type:uuid;column:owner_id"`
-	ExpiresAt   time.Time 		`gorm:"column:expires_at;not null"`
-	IsRented    bool      		`gorm:"column:is_rented;not null;default:false"`
+	ID          uuid.UUID `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
+	Title       string    `gorm:"type:varchar(255)"`
+	Type        string    `gorm:"type:varchar(50)"`
+	SizeSqM     float64   `gorm:"type:decimal(8,2);column:size_sq_m"`
+	Description string    `gorm:"type:text"`
+	Bedrooms    int32     `gorm:"type:integer"`
+	Bathrooms   float64   `gorm:"type:numeric(3,1)"`
+	Price       float64   `gorm:"type:numeric(12,2)"`
+	OwnerID     uuid.UUID `gorm:"type:uuid;column:owner_id"`
+	ExpiresAt   time.Time `gorm:"column:expires_at;not null"`
+	IsRented    bool      `gorm:"column:is_rented;not null;default:false"`
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
-	DeletedAt   gorm.DeletedAt	`gorm:"index"`
+	DeletedAt   gorm.DeletedAt `gorm:"index"`
 }
 
 const (
