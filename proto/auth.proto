@@ -51,6 +51,8 @@ message SignInWithGoogleResponse {
 message RegisterRequest {
     string email = 1;
     string password = 2;
+    string name = 3;
+    string phone = 4;
 }
 
 message RegisterResponse {

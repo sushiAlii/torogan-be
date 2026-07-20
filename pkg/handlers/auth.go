@@ -23,7 +23,7 @@ func NewAuthHandler(as *services.AuthService) *AuthHandler {
 
 func (h *AuthHandler) Register(ctx context.Context, req *connect.Request[authv1.RegisterRequest]) (*connect.Response[authv1.RegisterResponse], error) {
 
-	user, role, tokens, err := h.authService.Register(req.Msg.Email, req.Msg.Password)
+	user, role, tokens, err := h.authService.Register(req.Msg.Email, req.Msg.Password, req.Msg.Name, req.Msg.Phone)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}

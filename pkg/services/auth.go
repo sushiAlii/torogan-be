@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -32,7 +33,19 @@ func NewAuthService(db *gorm.DB) *AuthService {
 	return &AuthService{db: db}
 }
 
-func (as *AuthService) Register(email, password string) (*models.User, string, *TokenDetails, error) {
+// ErrIncompleteContactInfo is returned when a caller-supplied name or phone
+// is empty/whitespace-only. Name and phone are required at registration
+// (see also ErrIncompleteProfile in properties.go, the analogous check for
+// listing creation on accounts predating this requirement).
+var ErrIncompleteContactInfo = errors.New("name and phone are required")
+
+func (as *AuthService) Register(email, password, name, phone string) (*models.User, string, *TokenDetails, error) {
+	name = strings.TrimSpace(name)
+	phone = strings.TrimSpace(phone)
+	if name == "" || phone == "" {
+		return nil, "", nil, ErrIncompleteContactInfo
+	}
+
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
 		return nil, "", nil, fmt.Errorf("failed to process password: %w", err)
@@ -57,6 +70,8 @@ func (as *AuthService) Register(email, password string) (*models.User, string, *
 		user = models.User{
 			Email:    email,
 			Password: hashedPassword,
+			Name:     name,
+			Phone:    phone,
 			RoleID:   defaultRole.ID,
 		}
 
@@ -117,6 +132,7 @@ func (as *AuthService) SignInWithGoogle(ctx context.Context, idTokenStr string) 
 		return nil, "", nil, errors.New("google id token missing email")
 	}
 	picture, _ := payload.Claims["picture"].(string)
+	name, _ := payload.Claims["name"].(string)
 
 	var user models.User
 	var roleName string
@@ -140,6 +156,7 @@ func (as *AuthService) SignInWithGoogle(ctx context.Context, idTokenStr string) 
 			user = models.User{
 				Email:     email,
 				AvatarURL: picture,
+				Name:      name,
 				RoleID:    defaultRole.ID,
 			}
 			if err := tx.Create(&user).Error; err != nil {
