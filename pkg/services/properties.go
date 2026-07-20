@@ -3,6 +3,7 @@ package services
 import (
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -22,6 +23,14 @@ var ErrMaxPropertyImages = errors.New("property already has the maximum of 5 ima
 // branch in this service and avoiding confirming to a prober that the
 // resource exists under someone else's account.
 var ErrNotOwner = errors.New("caller does not own this property")
+
+// ErrIncompleteProfile is returned when a caller tries to create a listing
+// without a name/phone on file. Name+phone are required at registration
+// going forward, but this catches accounts that predate that requirement
+// (and Google sign-ins, where a phone number can never come from the OAuth
+// flow itself — see the /profile redirect in the frontend for the primary
+// nudge; this is the backend-side safety net for anyone who bypasses it).
+var ErrIncompleteProfile = errors.New("owner profile is missing name or phone")
 
 const maxPropertyImages = 5
 
@@ -45,6 +54,14 @@ func NewPropertyService(db *gorm.DB) *PropertyService {
 }
 
 func (s *PropertyService) CreateProperty(p models.Property) (*models.Property, error) {
+	var owner models.User
+	if err := s.db.First(&owner, "id = ?", p.OwnerID).Error; err != nil {
+		return nil, fmt.Errorf("failed to look up owner: %w", err)
+	}
+	if strings.TrimSpace(owner.Name) == "" || strings.TrimSpace(owner.Phone) == "" {
+		return nil, ErrIncompleteProfile
+	}
+
 	newProperty := models.Property{
 		Title:       p.Title,
 		Type:        p.Type,

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"strconv"
+	"strings"
 	"time"
 
 	"connectrpc.com/connect"
@@ -73,6 +74,28 @@ func (h *PropertiesHandler) CreateProperty(ctx context.Context, req *connect.Req
 		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("invalid expiration_days: %d (must be 7, 15, or 30)", msg.GetExpirationDays()))
 	}
 
+	// proto3 scalars have no field-presence tracking, so an omitted field
+	// is indistinguishable from an explicit zero value — "required"/">0"
+	// can only be enforced here, not via the proto schema.
+	if strings.TrimSpace(msg.GetTitle()) == "" {
+		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("title is required"))
+	}
+	if strings.TrimSpace(msg.GetDescription()) == "" {
+		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("description is required"))
+	}
+	if priceFloat <= 0 {
+		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("price must be greater than 0"))
+	}
+	if msg.GetBedrooms() <= 0 {
+		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("bedrooms must be greater than 0"))
+	}
+	if msg.GetBathrooms() <= 0 {
+		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("bathrooms must be greater than 0"))
+	}
+	if msg.GetSizeSqM() <= 0 {
+		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("size_sq_m must be greater than 0"))
+	}
+
 	newProperty := models.Property{
 		Title:       msg.GetTitle(),
 		Type:        msg.GetType(),
@@ -87,6 +110,9 @@ func (h *PropertiesHandler) CreateProperty(ctx context.Context, req *connect.Req
 
 	createdProperty, err := h.propertiesService.CreateProperty(newProperty)
 	if err != nil {
+		if errors.Is(err, services.ErrIncompleteProfile) {
+			return nil, connect.NewError(connect.CodeFailedPrecondition, errors.New("add your name and phone number in your profile before creating a listing"))
+		}
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 
@@ -215,6 +241,25 @@ func (h *PropertiesHandler) UpdatePropertyByID(ctx context.Context, req *connect
 
 	if !models.IsValidPropertyType(msg.GetType()) {
 		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("invalid property type: %q", msg.GetType()))
+	}
+
+	if strings.TrimSpace(msg.GetTitle()) == "" {
+		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("title is required"))
+	}
+	if strings.TrimSpace(msg.GetDescription()) == "" {
+		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("description is required"))
+	}
+	if priceFloat <= 0 {
+		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("price must be greater than 0"))
+	}
+	if msg.GetBedrooms() <= 0 {
+		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("bedrooms must be greater than 0"))
+	}
+	if msg.GetBathrooms() <= 0 {
+		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("bathrooms must be greater than 0"))
+	}
+	if msg.GetSizeSqM() <= 0 {
+		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("size_sq_m must be greater than 0"))
 	}
 
 	updatedProperty, err := h.propertiesService.UpdatePropertyByID(models.Property{

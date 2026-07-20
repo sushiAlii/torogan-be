@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	"connectrpc.com/connect"
 	"github.com/google/uuid"
@@ -14,6 +15,22 @@ import (
 	"github.com/sushiAlii/torogan-be/pkg/interceptors"
 	"github.com/sushiAlii/torogan-be/pkg/services"
 )
+
+// requireAddressFields enforces non-empty street/city/state — proto3 has no
+// field-presence tracking on these scalars, so this is the real enforcement
+// boundary, same reasoning as the property content checks in properties.go.
+func requireAddressFields(street, city, state string) error {
+	if strings.TrimSpace(street) == "" {
+		return connect.NewError(connect.CodeInvalidArgument, errors.New("street_address is required"))
+	}
+	if strings.TrimSpace(city) == "" {
+		return connect.NewError(connect.CodeInvalidArgument, errors.New("city is required"))
+	}
+	if strings.TrimSpace(state) == "" {
+		return connect.NewError(connect.CodeInvalidArgument, errors.New("state is required"))
+	}
+	return nil
+}
 
 type AddressesHandler struct {
 	addressesService *services.AddressService
@@ -41,6 +58,10 @@ func (h *AddressesHandler) CreateAddress(ctx context.Context, req *connect.Reque
 	propertyUUID, err := uuid.Parse(msg.GetPropertyId())
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("invalid property ID: %w", err))
+	}
+
+	if err := requireAddressFields(msg.GetStreetAddress(), msg.GetCity(), msg.GetState()); err != nil {
+		return nil, err
 	}
 
 	createdAddress, err := h.addressesService.CreateAddress(models.Address{
@@ -115,6 +136,10 @@ func (h *AddressesHandler) UpdateAddressByID(ctx context.Context, req *connect.R
 	addressUUID, err := uuid.Parse(msg.GetId())
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("invalid address ID: %w", err))
+	}
+
+	if err := requireAddressFields(msg.GetStreetAddress(), msg.GetCity(), msg.GetState()); err != nil {
+		return nil, err
 	}
 
 	updatedAddress, err := h.addressesService.UpdateAddressByID(models.Address{
