@@ -49,8 +49,19 @@ func main() {
 
 	log.Println("Database connection test successful!")
 
+	// Email Service — degrades to logging verification links to stdout
+	// instead of sending when SES_FROM_ADDRESS is unset (e.g. local dev
+	// without AWS SES configured). Only errors on genuine misconfiguration
+	// (SES_FROM_ADDRESS set without AWS_REGION), which is fatal since auth
+	// depends on it.
+	emailSvc, err := services.NewEmailService(ctx)
+	if err != nil {
+		log.Fatalf("Failed to initialize email service: %v", err)
+	}
+	appBaseURL := utils.GetEnv("PUBLIC_APP_URL", "http://localhost:3000")
+
 	// Auth Service
-	as := services.NewAuthService(db)
+	as := services.NewAuthService(db, emailSvc, appBaseURL)
 	ah := handlers.NewAuthHandler(as)
 
 	// authInterceptor reads the Authorization header on every RPC (across

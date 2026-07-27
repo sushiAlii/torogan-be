@@ -72,11 +72,12 @@ func (h *UserHandler) UpdateMe(ctx context.Context, req *connect.Request[pb.Upda
 
 func mapUserToProto(user *models.User, role string) *authv1.User {
 	return &authv1.User{
-		Id:        user.ID.String(),
-		Email:     user.Email,
-		AvatarUrl: user.AvatarURL,
-		Role:      role,
-		Name:      user.Name,
-		Phone:     user.Phone,
+		Id:            user.ID.String(),
+		Email:         user.Email,
+		AvatarUrl:     user.AvatarURL,
+		Role:          role,
+		Name:          user.Name,
+		Phone:         user.Phone,
+		EmailVerified: user.EmailVerifiedAt != nil,
 	}
 }

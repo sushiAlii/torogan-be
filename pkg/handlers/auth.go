@@ -23,9 +23,19 @@ func NewAuthHandler(as *services.AuthService) *AuthHandler {
 
 func (h *AuthHandler) Register(ctx context.Context, req *connect.Request[authv1.RegisterRequest]) (*connect.Response[authv1.RegisterResponse], error) {
 
-	user, role, tokens, err := h.authService.Register(req.Msg.Email, req.Msg.Password, req.Msg.Name, req.Msg.Phone)
+	user, role, tokens, err := h.authService.Register(ctx, req.Msg.Email, req.Msg.Password, req.Msg.Name, req.Msg.Phone)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
+	}
+
+	// A nil TokenDetails means email verification is required — the account
+	// was created but the caller is not logged in yet (see
+	// AuthService.Register). No refresh cookie is set in that case.
+	if tokens == nil {
+		return connect.NewResponse(&authv1.RegisterResponse{
+			User:                      mapUserToProto(user, role),
+			EmailVerificationRequired: true,
+		}), nil
 	}
 
 	res := connect.NewResponse(&authv1.RegisterResponse{
@@ -42,6 +52,9 @@ func (h *AuthHandler) Login(ctx context.Context, req *connect.Request[authv1.Log
 
 	user, role, tokens, err := h.authService.Login(req.Msg.Email, req.Msg.Password)
 	if err != nil {
+		if errors.Is(err, services.ErrEmailNotVerified) {
+			return nil, connect.NewError(connect.CodeFailedPrecondition, err)
+		}
 		return nil, connect.NewError(connect.CodeUnauthenticated, err)
 	}
 
@@ -108,6 +121,23 @@ func (h *AuthHandler) Logout(ctx context.Context, req *connect.Request[authv1.Lo
 	clearRefreshCookie(res.Header())
 
 	return res, nil
+}
+
+func (h *AuthHandler) VerifyEmail(ctx context.Context, req *connect.Request[authv1.VerifyEmailRequest]) (*connect.Response[authv1.VerifyEmailResponse], error) {
+	if err := h.authService.VerifyEmail(req.Msg.GetToken()); err != nil {
+		return nil, connect.NewError(connect.CodeInvalidArgument, err)
+	}
+
+	return connect.NewResponse(&authv1.VerifyEmailResponse{Success: true}), nil
+}
+
+// ResendVerificationEmail always reports success — AuthService.ResendVerificationEmail
+// silently no-ops for unknown/already-verified addresses so this endpoint
+// can't be used to enumerate accounts.
+func (h *AuthHandler) ResendVerificationEmail(ctx context.Context, req *connect.Request[authv1.ResendVerificationEmailRequest]) (*connect.Response[authv1.ResendVerificationEmailResponse], error) {
+	h.authService.ResendVerificationEmail(ctx, req.Msg.GetEmail())
+
+	return connect.NewResponse(&authv1.ResendVerificationEmailResponse{Success: true}), nil
 }
 
 func setRefreshCookie(header http.Header, token string) {

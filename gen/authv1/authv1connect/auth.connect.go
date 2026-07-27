@@ -45,6 +45,11 @@ const (
 	AuthServiceRefreshTokenProcedure = "/auth.v1.AuthService/RefreshToken"
 	// AuthServiceLogoutProcedure is the fully-qualified name of the AuthService's Logout RPC.
 	AuthServiceLogoutProcedure = "/auth.v1.AuthService/Logout"
+	// AuthServiceVerifyEmailProcedure is the fully-qualified name of the AuthService's VerifyEmail RPC.
+	AuthServiceVerifyEmailProcedure = "/auth.v1.AuthService/VerifyEmail"
+	// AuthServiceResendVerificationEmailProcedure is the fully-qualified name of the AuthService's
+	// ResendVerificationEmail RPC.
+	AuthServiceResendVerificationEmailProcedure = "/auth.v1.AuthService/ResendVerificationEmail"
 )
 
 // AuthServiceClient is a client for the auth.v1.AuthService service.
@@ -54,6 +59,13 @@ type AuthServiceClient interface {
 	Login(context.Context, *connect.Request[authv1.LoginRequest]) (*connect.Response[authv1.LoginResponse], error)
 	RefreshToken(context.Context, *connect.Request[authv1.RefreshTokenRequest]) (*connect.Response[authv1.RefreshTokenResponse], error)
 	Logout(context.Context, *connect.Request[authv1.LogoutRequest]) (*connect.Response[authv1.LogoutResponse], error)
+	// VerifyEmail consumes a short-lived token from a verification email link
+	// and marks the corresponding user's email as verified.
+	VerifyEmail(context.Context, *connect.Request[authv1.VerifyEmailRequest]) (*connect.Response[authv1.VerifyEmailResponse], error)
+	// ResendVerificationEmail re-sends the verification email for an
+	// unverified account. Always reports success regardless of whether the
+	// address exists, to avoid leaking account existence.
+	ResendVerificationEmail(context.Context, *connect.Request[authv1.ResendVerificationEmailRequest]) (*connect.Response[authv1.ResendVerificationEmailResponse], error)
 }
 
 // NewAuthServiceClient constructs a client for the auth.v1.AuthService service. By default, it uses
@@ -97,16 +109,30 @@ func NewAuthServiceClient(httpClient connect.HTTPClient, baseURL string, opts ..
 			connect.WithSchema(authServiceMethods.ByName("Logout")),
 			connect.WithClientOptions(opts...),
 		),
+		verifyEmail: connect.NewClient[authv1.VerifyEmailRequest, authv1.VerifyEmailResponse](
+			httpClient,
+			baseURL+AuthServiceVerifyEmailProcedure,
+			connect.WithSchema(authServiceMethods.ByName("VerifyEmail")),
+			connect.WithClientOptions(opts...),
+		),
+		resendVerificationEmail: connect.NewClient[authv1.ResendVerificationEmailRequest, authv1.ResendVerificationEmailResponse](
+			httpClient,
+			baseURL+AuthServiceResendVerificationEmailProcedure,
+			connect.WithSchema(authServiceMethods.ByName("ResendVerificationEmail")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
 // authServiceClient implements AuthServiceClient.
 type authServiceClient struct {
-	signInWithGoogle *connect.Client[authv1.SignInWithGoogleRequest, authv1.SignInWithGoogleResponse]
-	register         *connect.Client[authv1.RegisterRequest, authv1.RegisterResponse]
-	login            *connect.Client[authv1.LoginRequest, authv1.LoginResponse]
-	refreshToken     *connect.Client[authv1.RefreshTokenRequest, authv1.RefreshTokenResponse]
-	logout           *connect.Client[authv1.LogoutRequest, authv1.LogoutResponse]
+	signInWithGoogle        *connect.Client[authv1.SignInWithGoogleRequest, authv1.SignInWithGoogleResponse]
+	register                *connect.Client[authv1.RegisterRequest, authv1.RegisterResponse]
+	login                   *connect.Client[authv1.LoginRequest, authv1.LoginResponse]
+	refreshToken            *connect.Client[authv1.RefreshTokenRequest, authv1.RefreshTokenResponse]
+	logout                  *connect.Client[authv1.LogoutRequest, authv1.LogoutResponse]
+	verifyEmail             *connect.Client[authv1.VerifyEmailRequest, authv1.VerifyEmailResponse]
+	resendVerificationEmail *connect.Client[authv1.ResendVerificationEmailRequest, authv1.ResendVerificationEmailResponse]
 }
 
 // SignInWithGoogle calls auth.v1.AuthService.SignInWithGoogle.
@@ -134,6 +160,16 @@ func (c *authServiceClient) Logout(ctx context.Context, req *connect.Request[aut
 	return c.logout.CallUnary(ctx, req)
 }
 
+// VerifyEmail calls auth.v1.AuthService.VerifyEmail.
+func (c *authServiceClient) VerifyEmail(ctx context.Context, req *connect.Request[authv1.VerifyEmailRequest]) (*connect.Response[authv1.VerifyEmailResponse], error) {
+	return c.verifyEmail.CallUnary(ctx, req)
+}
+
+// ResendVerificationEmail calls auth.v1.AuthService.ResendVerificationEmail.
+func (c *authServiceClient) ResendVerificationEmail(ctx context.Context, req *connect.Request[authv1.ResendVerificationEmailRequest]) (*connect.Response[authv1.ResendVerificationEmailResponse], error) {
+	return c.resendVerificationEmail.CallUnary(ctx, req)
+}
+
 // AuthServiceHandler is an implementation of the auth.v1.AuthService service.
 type AuthServiceHandler interface {
 	SignInWithGoogle(context.Context, *connect.Request[authv1.SignInWithGoogleRequest]) (*connect.Response[authv1.SignInWithGoogleResponse], error)
@@ -141,6 +177,13 @@ type AuthServiceHandler interface {
 	Login(context.Context, *connect.Request[authv1.LoginRequest]) (*connect.Response[authv1.LoginResponse], error)
 	RefreshToken(context.Context, *connect.Request[authv1.RefreshTokenRequest]) (*connect.Response[authv1.RefreshTokenResponse], error)
 	Logout(context.Context, *connect.Request[authv1.LogoutRequest]) (*connect.Response[authv1.LogoutResponse], error)
+	// VerifyEmail consumes a short-lived token from a verification email link
+	// and marks the corresponding user's email as verified.
+	VerifyEmail(context.Context, *connect.Request[authv1.VerifyEmailRequest]) (*connect.Response[authv1.VerifyEmailResponse], error)
+	// ResendVerificationEmail re-sends the verification email for an
+	// unverified account. Always reports success regardless of whether the
+	// address exists, to avoid leaking account existence.
+	ResendVerificationEmail(context.Context, *connect.Request[authv1.ResendVerificationEmailRequest]) (*connect.Response[authv1.ResendVerificationEmailResponse], error)
 }
 
 // NewAuthServiceHandler builds an HTTP handler from the service implementation. It returns the path
@@ -180,6 +223,18 @@ func NewAuthServiceHandler(svc AuthServiceHandler, opts ...connect.HandlerOption
 		connect.WithSchema(authServiceMethods.ByName("Logout")),
 		connect.WithHandlerOptions(opts...),
 	)
+	authServiceVerifyEmailHandler := connect.NewUnaryHandler(
+		AuthServiceVerifyEmailProcedure,
+		svc.VerifyEmail,
+		connect.WithSchema(authServiceMethods.ByName("VerifyEmail")),
+		connect.WithHandlerOptions(opts...),
+	)
+	authServiceResendVerificationEmailHandler := connect.NewUnaryHandler(
+		AuthServiceResendVerificationEmailProcedure,
+		svc.ResendVerificationEmail,
+		connect.WithSchema(authServiceMethods.ByName("ResendVerificationEmail")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/auth.v1.AuthService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case AuthServiceSignInWithGoogleProcedure:
@@ -192,6 +247,10 @@ func NewAuthServiceHandler(svc AuthServiceHandler, opts ...connect.HandlerOption
 			authServiceRefreshTokenHandler.ServeHTTP(w, r)
 		case AuthServiceLogoutProcedure:
 			authServiceLogoutHandler.ServeHTTP(w, r)
+		case AuthServiceVerifyEmailProcedure:
+			authServiceVerifyEmailHandler.ServeHTTP(w, r)
+		case AuthServiceResendVerificationEmailProcedure:
+			authServiceResendVerificationEmailHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -219,4 +278,12 @@ func (UnimplementedAuthServiceHandler) RefreshToken(context.Context, *connect.Re
 
 func (UnimplementedAuthServiceHandler) Logout(context.Context, *connect.Request[authv1.LogoutRequest]) (*connect.Response[authv1.LogoutResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("auth.v1.AuthService.Logout is not implemented"))
+}
+
+func (UnimplementedAuthServiceHandler) VerifyEmail(context.Context, *connect.Request[authv1.VerifyEmailRequest]) (*connect.Response[authv1.VerifyEmailResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("auth.v1.AuthService.VerifyEmail is not implemented"))
+}
+
+func (UnimplementedAuthServiceHandler) ResendVerificationEmail(context.Context, *connect.Request[authv1.ResendVerificationEmailRequest]) (*connect.Response[authv1.ResendVerificationEmailResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("auth.v1.AuthService.ResendVerificationEmail is not implemented"))
 }

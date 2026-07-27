@@ -187,11 +187,14 @@ func (x *RegisterRequest) GetPhone() string {
 }
 
 type RegisterResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	AccessToken   string                 `protobuf:"bytes,1,opt,name=access_token,json=accessToken,proto3" json:"access_token,omitempty"`
-	User          *User                  `protobuf:"bytes,2,opt,name=user,proto3" json:"user,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// access_token is empty when email_verification_required is true — the
+	// caller is not logged in until they verify their email.
+	AccessToken               string `protobuf:"bytes,1,opt,name=access_token,json=accessToken,proto3" json:"access_token,omitempty"`
+	User                      *User  `protobuf:"bytes,2,opt,name=user,proto3" json:"user,omitempty"`
+	EmailVerificationRequired bool   `protobuf:"varint,3,opt,name=email_verification_required,json=emailVerificationRequired,proto3" json:"email_verification_required,omitempty"`
+	unknownFields             protoimpl.UnknownFields
+	sizeCache                 protoimpl.SizeCache
 }
 
 func (x *RegisterResponse) Reset() {
@@ -236,6 +239,13 @@ func (x *RegisterResponse) GetUser() *User {
 		return x.User
 	}
 	return nil
+}
+
+func (x *RegisterResponse) GetEmailVerificationRequired() bool {
+	if x != nil {
+		return x.EmailVerificationRequired
+	}
+	return false
 }
 
 type LoginRequest struct {
@@ -510,6 +520,182 @@ func (x *LogoutResponse) GetSuccess() bool {
 	return false
 }
 
+type VerifyEmailRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Token         string                 `protobuf:"bytes,1,opt,name=token,proto3" json:"token,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *VerifyEmailRequest) Reset() {
+	*x = VerifyEmailRequest{}
+	mi := &file_auth_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *VerifyEmailRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*VerifyEmailRequest) ProtoMessage() {}
+
+func (x *VerifyEmailRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_auth_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use VerifyEmailRequest.ProtoReflect.Descriptor instead.
+func (*VerifyEmailRequest) Descriptor() ([]byte, []int) {
+	return file_auth_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *VerifyEmailRequest) GetToken() string {
+	if x != nil {
+		return x.Token
+	}
+	return ""
+}
+
+type VerifyEmailResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *VerifyEmailResponse) Reset() {
+	*x = VerifyEmailResponse{}
+	mi := &file_auth_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *VerifyEmailResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*VerifyEmailResponse) ProtoMessage() {}
+
+func (x *VerifyEmailResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_auth_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use VerifyEmailResponse.ProtoReflect.Descriptor instead.
+func (*VerifyEmailResponse) Descriptor() ([]byte, []int) {
+	return file_auth_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *VerifyEmailResponse) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+type ResendVerificationEmailRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Email         string                 `protobuf:"bytes,1,opt,name=email,proto3" json:"email,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ResendVerificationEmailRequest) Reset() {
+	*x = ResendVerificationEmailRequest{}
+	mi := &file_auth_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ResendVerificationEmailRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ResendVerificationEmailRequest) ProtoMessage() {}
+
+func (x *ResendVerificationEmailRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_auth_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ResendVerificationEmailRequest.ProtoReflect.Descriptor instead.
+func (*ResendVerificationEmailRequest) Descriptor() ([]byte, []int) {
+	return file_auth_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *ResendVerificationEmailRequest) GetEmail() string {
+	if x != nil {
+		return x.Email
+	}
+	return ""
+}
+
+type ResendVerificationEmailResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ResendVerificationEmailResponse) Reset() {
+	*x = ResendVerificationEmailResponse{}
+	mi := &file_auth_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ResendVerificationEmailResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ResendVerificationEmailResponse) ProtoMessage() {}
+
+func (x *ResendVerificationEmailResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_auth_proto_msgTypes[13]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ResendVerificationEmailResponse.ProtoReflect.Descriptor instead.
+func (*ResendVerificationEmailResponse) Descriptor() ([]byte, []int) {
+	return file_auth_proto_rawDescGZIP(), []int{13}
+}
+
+func (x *ResendVerificationEmailResponse) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
 type User struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
@@ -518,13 +704,14 @@ type User struct {
 	Role          string                 `protobuf:"bytes,4,opt,name=role,proto3" json:"role,omitempty"`
 	Name          string                 `protobuf:"bytes,5,opt,name=name,proto3" json:"name,omitempty"`
 	Phone         string                 `protobuf:"bytes,6,opt,name=phone,proto3" json:"phone,omitempty"`
+	EmailVerified bool                   `protobuf:"varint,7,opt,name=email_verified,json=emailVerified,proto3" json:"email_verified,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *User) Reset() {
 	*x = User{}
-	mi := &file_auth_proto_msgTypes[10]
+	mi := &file_auth_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -536,7 +723,7 @@ func (x *User) String() string {
 func (*User) ProtoMessage() {}
 
 func (x *User) ProtoReflect() protoreflect.Message {
-	mi := &file_auth_proto_msgTypes[10]
+	mi := &file_auth_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -549,7 +736,7 @@ func (x *User) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use User.ProtoReflect.Descriptor instead.
 func (*User) Descriptor() ([]byte, []int) {
-	return file_auth_proto_rawDescGZIP(), []int{10}
+	return file_auth_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *User) GetId() string {
@@ -594,6 +781,13 @@ func (x *User) GetPhone() string {
 	return ""
 }
 
+func (x *User) GetEmailVerified() bool {
+	if x != nil {
+		return x.EmailVerified
+	}
+	return false
+}
+
 var File_auth_proto protoreflect.FileDescriptor
 
 const file_auth_proto_rawDesc = "" +
@@ -609,10 +803,11 @@ const file_auth_proto_rawDesc = "" +
 	"\x05email\x18\x01 \x01(\tR\x05email\x12\x1a\n" +
 	"\bpassword\x18\x02 \x01(\tR\bpassword\x12\x12\n" +
 	"\x04name\x18\x03 \x01(\tR\x04name\x12\x14\n" +
-	"\x05phone\x18\x04 \x01(\tR\x05phone\"X\n" +
+	"\x05phone\x18\x04 \x01(\tR\x05phone\"\x98\x01\n" +
 	"\x10RegisterResponse\x12!\n" +
 	"\faccess_token\x18\x01 \x01(\tR\vaccessToken\x12!\n" +
-	"\x04user\x18\x02 \x01(\v2\r.auth.v1.UserR\x04user\"@\n" +
+	"\x04user\x18\x02 \x01(\v2\r.auth.v1.UserR\x04user\x12>\n" +
+	"\x1bemail_verification_required\x18\x03 \x01(\bR\x19emailVerificationRequired\"@\n" +
 	"\fLoginRequest\x12\x14\n" +
 	"\x05email\x18\x01 \x01(\tR\x05email\x12\x1a\n" +
 	"\bpassword\x18\x02 \x01(\tR\bpassword\"U\n" +
@@ -625,7 +820,15 @@ const file_auth_proto_rawDesc = "" +
 	"\x04user\x18\x02 \x01(\v2\r.auth.v1.UserR\x04user\"\x0f\n" +
 	"\rLogoutRequest\"*\n" +
 	"\x0eLogoutResponse\x12\x18\n" +
-	"\asuccess\x18\x01 \x01(\bR\asuccess\"\x89\x01\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\"*\n" +
+	"\x12VerifyEmailRequest\x12\x14\n" +
+	"\x05token\x18\x01 \x01(\tR\x05token\"/\n" +
+	"\x13VerifyEmailResponse\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\"6\n" +
+	"\x1eResendVerificationEmailRequest\x12\x14\n" +
+	"\x05email\x18\x01 \x01(\tR\x05email\";\n" +
+	"\x1fResendVerificationEmailResponse\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\"\xb0\x01\n" +
 	"\x04User\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
 	"\x05email\x18\x02 \x01(\tR\x05email\x12\x1d\n" +
@@ -633,13 +836,16 @@ const file_auth_proto_rawDesc = "" +
 	"avatar_url\x18\x03 \x01(\tR\tavatarUrl\x12\x12\n" +
 	"\x04role\x18\x04 \x01(\tR\x04role\x12\x12\n" +
 	"\x04name\x18\x05 \x01(\tR\x04name\x12\x14\n" +
-	"\x05phone\x18\x06 \x01(\tR\x05phone2\xfc\x03\n" +
+	"\x05phone\x18\x06 \x01(\tR\x05phone\x12%\n" +
+	"\x0eemail_verified\x18\a \x01(\bR\remailVerified2\x80\x06\n" +
 	"\vAuthService\x12z\n" +
 	"\x10SignInWithGoogle\x12 .auth.v1.SignInWithGoogleRequest\x1a!.auth.v1.SignInWithGoogleResponse\"!\x82\xd3\xe4\x93\x02\x1b:\x01*\"\x16/v1/auth/google/signin\x12]\n" +
 	"\bRegister\x12\x18.auth.v1.RegisterRequest\x1a\x19.auth.v1.RegisterResponse\"\x1c\x82\xd3\xe4\x93\x02\x16:\x01*\"\x11/v1/auth/register\x12Q\n" +
 	"\x05Login\x12\x15.auth.v1.LoginRequest\x1a\x16.auth.v1.LoginResponse\"\x19\x82\xd3\xe4\x93\x02\x13:\x01*\"\x0e/v1/auth/login\x12h\n" +
 	"\fRefreshToken\x12\x1c.auth.v1.RefreshTokenRequest\x1a\x1d.auth.v1.RefreshTokenResponse\"\x1b\x82\xd3\xe4\x93\x02\x15:\x01*\"\x10/v1/auth/refresh\x12U\n" +
-	"\x06Logout\x12\x16.auth.v1.LogoutRequest\x1a\x17.auth.v1.LogoutResponse\"\x1a\x82\xd3\xe4\x93\x02\x14:\x01*\"\x0f/v1/auth/logoutB3Z1github.com/sushiAlii/torogan-be/gen/authv1;authv1b\x06proto3"
+	"\x06Logout\x12\x16.auth.v1.LogoutRequest\x1a\x17.auth.v1.LogoutResponse\"\x1a\x82\xd3\xe4\x93\x02\x14:\x01*\"\x0f/v1/auth/logout\x12j\n" +
+	"\vVerifyEmail\x12\x1b.auth.v1.VerifyEmailRequest\x1a\x1c.auth.v1.VerifyEmailResponse\" \x82\xd3\xe4\x93\x02\x1a:\x01*\"\x15/v1/auth/verify-email\x12\x95\x01\n" +
+	"\x17ResendVerificationEmail\x12'.auth.v1.ResendVerificationEmailRequest\x1a(.auth.v1.ResendVerificationEmailResponse\"'\x82\xd3\xe4\x93\x02!:\x01*\"\x1c/v1/auth/resend-verificationB3Z1github.com/sushiAlii/torogan-be/gen/authv1;authv1b\x06proto3"
 
 var (
 	file_auth_proto_rawDescOnce sync.Once
@@ -653,37 +859,45 @@ func file_auth_proto_rawDescGZIP() []byte {
 	return file_auth_proto_rawDescData
 }
 
-var file_auth_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
+var file_auth_proto_msgTypes = make([]protoimpl.MessageInfo, 15)
 var file_auth_proto_goTypes = []any{
-	(*SignInWithGoogleRequest)(nil),  // 0: auth.v1.SignInWithGoogleRequest
-	(*SignInWithGoogleResponse)(nil), // 1: auth.v1.SignInWithGoogleResponse
-	(*RegisterRequest)(nil),          // 2: auth.v1.RegisterRequest
-	(*RegisterResponse)(nil),         // 3: auth.v1.RegisterResponse
-	(*LoginRequest)(nil),             // 4: auth.v1.LoginRequest
-	(*LoginResponse)(nil),            // 5: auth.v1.LoginResponse
-	(*RefreshTokenRequest)(nil),      // 6: auth.v1.RefreshTokenRequest
-	(*RefreshTokenResponse)(nil),     // 7: auth.v1.RefreshTokenResponse
-	(*LogoutRequest)(nil),            // 8: auth.v1.LogoutRequest
-	(*LogoutResponse)(nil),           // 9: auth.v1.LogoutResponse
-	(*User)(nil),                     // 10: auth.v1.User
+	(*SignInWithGoogleRequest)(nil),         // 0: auth.v1.SignInWithGoogleRequest
+	(*SignInWithGoogleResponse)(nil),        // 1: auth.v1.SignInWithGoogleResponse
+	(*RegisterRequest)(nil),                 // 2: auth.v1.RegisterRequest
+	(*RegisterResponse)(nil),                // 3: auth.v1.RegisterResponse
+	(*LoginRequest)(nil),                    // 4: auth.v1.LoginRequest
+	(*LoginResponse)(nil),                   // 5: auth.v1.LoginResponse
+	(*RefreshTokenRequest)(nil),             // 6: auth.v1.RefreshTokenRequest
+	(*RefreshTokenResponse)(nil),            // 7: auth.v1.RefreshTokenResponse
+	(*LogoutRequest)(nil),                   // 8: auth.v1.LogoutRequest
+	(*LogoutResponse)(nil),                  // 9: auth.v1.LogoutResponse
+	(*VerifyEmailRequest)(nil),              // 10: auth.v1.VerifyEmailRequest
+	(*VerifyEmailResponse)(nil),             // 11: auth.v1.VerifyEmailResponse
+	(*ResendVerificationEmailRequest)(nil),  // 12: auth.v1.ResendVerificationEmailRequest
+	(*ResendVerificationEmailResponse)(nil), // 13: auth.v1.ResendVerificationEmailResponse
+	(*User)(nil),                            // 14: auth.v1.User
 }
 var file_auth_proto_depIdxs = []int32{
-	10, // 0: auth.v1.SignInWithGoogleResponse.user:type_name -> auth.v1.User
-	10, // 1: auth.v1.RegisterResponse.user:type_name -> auth.v1.User
-	10, // 2: auth.v1.LoginResponse.user:type_name -> auth.v1.User
-	10, // 3: auth.v1.RefreshTokenResponse.user:type_name -> auth.v1.User
+	14, // 0: auth.v1.SignInWithGoogleResponse.user:type_name -> auth.v1.User
+	14, // 1: auth.v1.RegisterResponse.user:type_name -> auth.v1.User
+	14, // 2: auth.v1.LoginResponse.user:type_name -> auth.v1.User
+	14, // 3: auth.v1.RefreshTokenResponse.user:type_name -> auth.v1.User
 	0,  // 4: auth.v1.AuthService.SignInWithGoogle:input_type -> auth.v1.SignInWithGoogleRequest
 	2,  // 5: auth.v1.AuthService.Register:input_type -> auth.v1.RegisterRequest
 	4,  // 6: auth.v1.AuthService.Login:input_type -> auth.v1.LoginRequest
 	6,  // 7: auth.v1.AuthService.RefreshToken:input_type -> auth.v1.RefreshTokenRequest
 	8,  // 8: auth.v1.AuthService.Logout:input_type -> auth.v1.LogoutRequest
-	1,  // 9: auth.v1.AuthService.SignInWithGoogle:output_type -> auth.v1.SignInWithGoogleResponse
-	3,  // 10: auth.v1.AuthService.Register:output_type -> auth.v1.RegisterResponse
-	5,  // 11: auth.v1.AuthService.Login:output_type -> auth.v1.LoginResponse
-	7,  // 12: auth.v1.AuthService.RefreshToken:output_type -> auth.v1.RefreshTokenResponse
-	9,  // 13: auth.v1.AuthService.Logout:output_type -> auth.v1.LogoutResponse
-	9,  // [9:14] is the sub-list for method output_type
-	4,  // [4:9] is the sub-list for method input_type
+	10, // 9: auth.v1.AuthService.VerifyEmail:input_type -> auth.v1.VerifyEmailRequest
+	12, // 10: auth.v1.AuthService.ResendVerificationEmail:input_type -> auth.v1.ResendVerificationEmailRequest
+	1,  // 11: auth.v1.AuthService.SignInWithGoogle:output_type -> auth.v1.SignInWithGoogleResponse
+	3,  // 12: auth.v1.AuthService.Register:output_type -> auth.v1.RegisterResponse
+	5,  // 13: auth.v1.AuthService.Login:output_type -> auth.v1.LoginResponse
+	7,  // 14: auth.v1.AuthService.RefreshToken:output_type -> auth.v1.RefreshTokenResponse
+	9,  // 15: auth.v1.AuthService.Logout:output_type -> auth.v1.LogoutResponse
+	11, // 16: auth.v1.AuthService.VerifyEmail:output_type -> auth.v1.VerifyEmailResponse
+	13, // 17: auth.v1.AuthService.ResendVerificationEmail:output_type -> auth.v1.ResendVerificationEmailResponse
+	11, // [11:18] is the sub-list for method output_type
+	4,  // [4:11] is the sub-list for method input_type
 	4,  // [4:4] is the sub-list for extension type_name
 	4,  // [4:4] is the sub-list for extension extendee
 	0,  // [0:4] is the sub-list for field type_name
@@ -700,7 +914,7 @@ func file_auth_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_auth_proto_rawDesc), len(file_auth_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   11,
+			NumMessages:   15,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

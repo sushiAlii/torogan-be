@@ -37,6 +37,23 @@ service AuthService {
             body: "*"
         };
     }
+    // VerifyEmail consumes a short-lived token from a verification email link
+    // and marks the corresponding user's email as verified.
+    rpc VerifyEmail(VerifyEmailRequest) returns (VerifyEmailResponse) {
+        option (google.api.http) = {
+            post: "/v1/auth/verify-email"
+            body: "*"
+        };
+    }
+    // ResendVerificationEmail re-sends the verification email for an
+    // unverified account. Always reports success regardless of whether the
+    // address exists, to avoid leaking account existence.
+    rpc ResendVerificationEmail(ResendVerificationEmailRequest) returns (ResendVerificationEmailResponse) {
+        option (google.api.http) = {
+            post: "/v1/auth/resend-verification"
+            body: "*"
+        };
+    }
 }
 
 message SignInWithGoogleRequest {
@@ -56,8 +73,11 @@ message RegisterRequest {
 }
 
 message RegisterResponse {
+    // access_token is empty when email_verification_required is true — the
+    // caller is not logged in until they verify their email.
     string access_token = 1;
     User user = 2;
+    bool email_verification_required = 3;
 }
 
 message LoginRequest {
@@ -83,6 +103,22 @@ message LogoutResponse {
     bool success = 1;
 }
 
+message VerifyEmailRequest {
+    string token = 1;
+}
+
+message VerifyEmailResponse {
+    bool success = 1;
+}
+
+message ResendVerificationEmailRequest {
+    string email = 1;
+}
+
+message ResendVerificationEmailResponse {
+    bool success = 1;
+}
+
 message User {
   string id = 1;
   string email = 2;
@@ -90,4 +126,5 @@ message User {
   string role = 4;
   string name = 5;
   string phone = 6;
+  bool email_verified = 7;
 }
