@@ -6,6 +6,7 @@ CREATE TABLE
         avatar_url TEXT,
         name VARCHAR(100),
         phone VARCHAR(30),
+        email_verified_at TIMESTAMP WITH TIME ZONE,
         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
         deleted_at TIMESTAMP WITH TIME ZONE,

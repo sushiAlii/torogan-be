@@ -15,9 +15,14 @@ type User struct {
 	Name      string    `gorm:"type:varchar(100)"`
 	Phone     string    `gorm:"type:varchar(30)"`
 	RoleID    uint      `gorm:"column:role_id"`
-	CreatedAt time.Time
-	UpdatedAt time.Time
-	DeletedAt gorm.DeletedAt `gorm:"index"`
+	// EmailVerifiedAt is nil until the user proves ownership of their email
+	// (via the verification link). Traditional email/password logins are
+	// gated on this being non-nil; Google sign-ins set it automatically from
+	// the id_token's email_verified claim.
+	EmailVerifiedAt *time.Time `gorm:"column:email_verified_at"`
+	CreatedAt       time.Time
+	UpdatedAt       time.Time
+	DeletedAt       gorm.DeletedAt `gorm:"index"`
 }
 
 func (User) TableName() string {
