@@ -5,6 +5,12 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: "Existing image tag (git SHA) to redeploy, e.g. for rollback. Leave blank to build and deploy the current commit."
+        required: false
+        type: string
 
 env:
   GO_VERSION: "1.26.x"
@@ -87,7 +93,7 @@ jobs:
   deploy:
     name: Deploy to production
     needs: [lint, build-and-test]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -95,6 +101,7 @@ jobs:
     env:
       AWS_REGION: ap-southeast-1
       INSTANCE_ID: i-05efbba00e4330079
+      IMAGE_TAG: ${{ github.event.inputs.image_tag || github.sha }}
     steps:
       - uses: actions/checkout@v4
 
@@ -106,14 +113,24 @@ jobs:
       - id: ecr
         uses: aws-actions/amazon-ecr-login@v2
 
+      # Normal path: build from the checked-out commit and push it under its own SHA tag.
       - name: Build and push images
+        if: github.event.inputs.image_tag == ''
         env:
           ECR_REGISTRY: ${{ steps.ecr.outputs.registry }}
         run: |
-          docker build -f Dockerfile.prod -t $ECR_REGISTRY/torogan-be:$GITHUB_SHA .
-          docker build -f Dockerfile.migrations -t $ECR_REGISTRY/torogan-be-migrations:$GITHUB_SHA .
-          docker push $ECR_REGISTRY/torogan-be:$GITHUB_SHA
-          docker push $ECR_REGISTRY/torogan-be-migrations:$GITHUB_SHA
+          docker build -f Dockerfile.prod -t $ECR_REGISTRY/torogan-be:$IMAGE_TAG .
+          docker build -f Dockerfile.migrations -t $ECR_REGISTRY/torogan-be-migrations:$IMAGE_TAG .
+          docker push $ECR_REGISTRY/torogan-be:$IMAGE_TAG
+          docker push $ECR_REGISTRY/torogan-be-migrations:$IMAGE_TAG
+
+      # Rollback path: never rebuild under an old tag (that would silently replace what
+      # that historical tag means). Just confirm the requested tag already exists in ECR.
+      - name: Verify rollback image exists
+        if: github.event.inputs.image_tag != ''
+        run: |
+          aws ecr describe-images --region $AWS_REGION --repository-name torogan-be --image-ids imageTag=$IMAGE_TAG
+          aws ecr describe-images --region $AWS_REGION --repository-name torogan-be-migrations --image-ids imageTag=$IMAGE_TAG
 
       - name: Deploy via SSM
         env:
@@ -125,14 +142,14 @@ jobs:
           CMD=$(aws ssm send-command \
             --instance-ids "$INSTANCE_ID" \
             --document-name AWS-RunShellScript \
-            --comment "deploy ${GITHUB_SHA:0:7}" \
+            --comment "deploy ${IMAGE_TAG:0:7}" \
             --parameters "commands=[
               \"set -eu\",
               \"echo $COMPOSE | base64 -d > /home/ubuntu/docker-compose.prod.yml\",
               \"echo $CADDY | base64 -d > /home/ubuntu/Caddyfile\",
               \"echo $SCRIPT | base64 -d > /home/ubuntu/remote-deploy.sh\",
               \"chmod +x /home/ubuntu/remote-deploy.sh\",
-              \"IMAGE_TAG=$GITHUB_SHA ECR_REGISTRY=$ECR_REGISTRY bash /home/ubuntu/remote-deploy.sh\"
+              \"IMAGE_TAG=$IMAGE_TAG ECR_REGISTRY=$ECR_REGISTRY bash /home/ubuntu/remote-deploy.sh\"
             ]" --query 'Command.CommandId' --output text)
 
           aws ssm wait command-executed --command-id "$CMD" --instance-id "$INSTANCE_ID" || true
