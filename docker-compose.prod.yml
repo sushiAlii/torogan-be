@@ -18,7 +18,7 @@ services:
       retries: 5
 
   backend:
-    image: torogan-be:prod
+    image: ${ECR_REGISTRY}/torogan-be:${IMAGE_TAG}
     container_name: torogan-be
     restart: unless-stopped
     expose:
@@ -31,6 +31,20 @@ services:
     environment:
       DB_HOST: torogan-postgres
       APP_ENV: production
+    networks:
+      - torogan-network
+
+  migrate:
+    image: ${ECR_REGISTRY}/torogan-be-migrations:${IMAGE_TAG}
+    profiles: ["tools"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command:
+      - -path=/migrations
+      - -database
+      - postgres://${DB_USER}:${DB_PASSWORD}@torogan-postgres:5432/${DB_NAME}?sslmode=${DB_SSLMODE}
+      - up
     networks:
       - torogan-network
 

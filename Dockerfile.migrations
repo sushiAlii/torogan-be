@@ -1,0 +1,4 @@
+# Migrations shipped as an image so they are versioned with the code that
+# needs them, rather than hand-copied to the host (which silently went stale).
+FROM migrate/migrate:v4.17.1
+COPY internal/database/migrations /migrations
