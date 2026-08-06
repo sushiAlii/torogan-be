@@ -127,7 +127,7 @@ jobs:
             --document-name AWS-RunShellScript \
             --comment "deploy ${GITHUB_SHA:0:7}" \
             --parameters "commands=[
-              \"set -euo pipefail\",
+              \"set -eu\",
               \"echo $COMPOSE | base64 -d > /home/ubuntu/docker-compose.prod.yml\",
               \"echo $CADDY | base64 -d > /home/ubuntu/Caddyfile\",
               \"echo $SCRIPT | base64 -d > /home/ubuntu/remote-deploy.sh\",
